@@ -1,13 +1,14 @@
 "use client";
 import { useState } from "react";
-import Navigation from "../components/Navigation";
+import ModernNavigation from "../components/ModernNavigation";
+import './chat.css';
 
 export default function Chat() {
   const [messages, setMessages] = useState<{ user: string, text: string }[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
-
+  const [showLogs, setShowLogs] = useState(false);
 
   async function handleSend() {
     if (!input.trim()) return;
@@ -49,11 +50,15 @@ export default function Chat() {
           ...prev,
           `Received response: ${JSON.stringify(data)}`
         ]);
-        setMessages(prev => [...prev, { user: "AI", text: data.response }]);
+        if (data.choices && data.choices[0]) {
+          setMessages(prev => [...prev, { user: "AI", text: data.choices[0].message.content }]);
+        } else {
+          setMessages(prev => [...prev, { user: "AI", text: "I received your message but couldn't generate a response." }]);
+        }
       } else {
         setLogs(prev => [
           ...prev,
-          `Error: Received HTTP ${response.status}`
+          `HTTP Error: ${response.status} ${response.statusText}`
         ]);
         setMessages(prev => [...prev, { user: "AI", text: "Sorry, I encountered an error." }]);
       }
@@ -69,147 +74,169 @@ export default function Chat() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      <Navigation />
-      <div style={{ display: "flex", height: "calc(100vh - 70px)" }}>
-        {/* Chat Interface */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          {/* Header */}
-          <div style={{ 
-            background: "#fff", 
-            borderBottom: "1px solid #e5e7eb", 
-            padding: "1rem 2rem",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-          }}>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#181e2a", margin: 0 }}>
-              🤖 Chat with AI Agent
+    <div className="chat-container">
+      <ModernNavigation />
+      
+      <main className="chat-main">
+        {/* Chat Header */}
+        <div className="chat-header">
+          <div className="header-content">
+            <h1 className="chat-title">
+              <span className="chat-icon">◒</span>
+              AI Chat Interface
             </h1>
-            <p style={{ color: "#64748b", margin: "0.5rem 0 0", fontSize: "0.875rem" }}>
-              Ask questions and get intelligent responses powered by your knowledge base
+            <p className="chat-subtitle">
+              Intelligent conversations powered by your knowledge base
             </p>
           </div>
-          {/* Logging Section */}
-          <div style={{ background: "#f1f5f9", borderBottom: "1px solid #e5e7eb", padding: "0.5rem 2rem", fontSize: "0.9rem", color: "#334155", maxHeight: 120, overflowY: "auto" }}>
-            <strong>Logs:</strong>
-            <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {logs.slice(-8).map((log, idx) => (
-                <li key={idx} style={{ fontFamily: "monospace", whiteSpace: "pre-wrap" }}>{log}</li>
-              ))}
-            </ul>
-          </div>
-          {/* Messages */}
-          <div style={{ 
-            flex: 1, 
-            padding: "2rem", 
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1rem"
-          }}>
-            {messages.length === 0 && (
-              <div style={{ 
-                textAlign: "center", 
-                color: "#64748b", 
-                marginTop: "2rem",
-                background: "#fff",
-                padding: "2rem",
-                borderRadius: "12px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-              }}>
-                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>💬</div>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.5rem" }}>Start a conversation</h3>
-                <p>Ask me anything! I can help you with information from your uploaded documents.</p>
-              </div>
-            )}
-            {messages.map((msg, idx) => (
-              <div key={idx} style={{ 
-                display: "flex", 
-                justifyContent: msg.user === "You" ? "flex-end" : "flex-start",
-                marginBottom: "1rem"
-              }}>
-                <div style={{
-                  maxWidth: "70%",
-                  padding: "1rem 1.5rem",
-                  borderRadius: "18px",
-                  background: msg.user === "You" ? "#38bdf8" : "#fff",
-                  color: msg.user === "You" ? "#fff" : "#374151",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  lineHeight: 1.5
-                }}>
-                  <div style={{ 
-                    fontSize: "0.75rem", 
-                    fontWeight: 600, 
-                    marginBottom: "0.25rem",
-                    opacity: 0.8
-                  }}>
-                    {msg.user}
-                  </div>
-                  {msg.text}
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div style={{ display: "flex", justifyContent: "flex-start" }}>
-                <div style={{
-                  padding: "1rem 1.5rem",
-                  borderRadius: "18px",
-                  background: "#fff",
-                  color: "#64748b",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  fontStyle: "italic"
-                }}>
-                  AI is thinking...
-                </div>
-              </div>
-            )}
-          </div>
-          {/* Input */}
-          <div style={{ 
-            background: "#fff", 
-            borderTop: "1px solid #e5e7eb", 
-            padding: "1.5rem 2rem",
-            boxShadow: "0 -2px 4px rgba(0,0,0,0.05)"
-          }}>
-            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Type your message..."
-                disabled={isLoading}
-                style={{
-                  flex: 1,
-                  padding: "1rem 1.5rem",
-                  border: "2px solid #e5e7eb",
-                  borderRadius: "25px",
-                  fontSize: "1rem",
-                  outline: "none",
-                  transition: "border-color 0.2s",
-                  background: "#f8fafc"
-                }}
-              />
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                style={{
-                  padding: "1rem 2rem",
-                  background: input.trim() && !isLoading ? "#38bdf8" : "#94a3b8",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "25px",
-                  cursor: input.trim() && !isLoading ? "pointer" : "not-allowed",
-                  fontWeight: 600,
-                  fontSize: "1rem",
-                  transition: "background-color 0.2s"
-                }}
-              >
-                {isLoading ? "..." : "Send"}
-              </button>
-            </div>
+          
+          <div className="chat-controls">
+            <button 
+              className={`control-btn ${showLogs ? 'active' : ''}`}
+              onClick={() => setShowLogs(!showLogs)}
+            >
+              <span className="btn-icon">◓</span>
+              Logs
+            </button>
+            <button 
+              className="control-btn"
+              onClick={() => {
+                setMessages([]);
+                setLogs([]);
+              }}
+            >
+              <span className="btn-icon">◯</span>
+              Clear
+            </button>
           </div>
         </div>
-      </div>
+
+        <div className="chat-layout">
+          {/* Main Chat Area */}
+          <div className="chat-area">
+            {/* Messages Container */}
+            <div className="messages-container">
+              {messages.length === 0 ? (
+                <div className="empty-chat">
+                  <div className="empty-icon">◒</div>
+                  <h3>Start a conversation</h3>
+                  <p>Ask me anything! I can help you with information from your uploaded documents.</p>
+                  <div className="sample-questions">
+                    <div className="sample-title">Try asking:</div>
+                    <button 
+                      className="sample-btn"
+                      onClick={() => setInput("What information do you have?")}
+                    >
+                      "What information do you have?"
+                    </button>
+                    <button 
+                      className="sample-btn"
+                      onClick={() => setInput("Summarize the key points")}
+                    >
+                      "Summarize the key points"
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="messages-list">
+                  {messages.map((msg, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`message ${msg.user === "You" ? 'user-message' : 'ai-message'}`}
+                    >
+                      <div className="message-avatar">
+                        {msg.user === "You" ? '◑' : '◒'}
+                      </div>
+                      <div className="message-content">
+                        <div className="message-header">
+                          <span className="message-author">{msg.user}</span>
+                          <span className="message-time">
+                            {new Date().toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <div className="message-text">{msg.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {isLoading && (
+                    <div className="message ai-message loading">
+                      <div className="message-avatar">◒</div>
+                      <div className="message-content">
+                        <div className="message-header">
+                          <span className="message-author">AI</span>
+                        </div>
+                        <div className="message-text">
+                          <div className="typing-indicator">
+                            <span className="typing-dot"></span>
+                            <span className="typing-dot"></span>
+                            <span className="typing-dot"></span>
+                          </div>
+                          Thinking...
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Input Area */}
+            <div className="input-area">
+              <div className="input-container">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                  placeholder="Type your message..."
+                  className="chat-input"
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() || isLoading}
+                  className="send-btn"
+                >
+                  <span className="send-icon">↗</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Logs Panel */}
+          {showLogs && (
+            <div className="logs-panel">
+              <div className="logs-header">
+                <h3>
+                  <span className="logs-icon">◓</span>
+                  Debug Logs
+                </h3>
+                <button 
+                  className="close-logs"
+                  onClick={() => setShowLogs(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="logs-content">
+                {logs.length === 0 ? (
+                  <div className="no-logs">No logs yet</div>
+                ) : (
+                  logs.map((log, idx) => (
+                    <div key={idx} className="log-entry">
+                      <span className="log-time">
+                        {new Date().toLocaleTimeString()}
+                      </span>
+                      <span className="log-text">{log}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

@@ -2,10 +2,12 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 import './ModernNavigation.css';
 
 const ModernNavigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
 
   const navigationItems = [
     { label: 'Home', href: '/', icon: '◯' },
@@ -58,6 +60,40 @@ const ModernNavigation = () => {
           <Link href="/contact" className="contact-btn">
             Contact AI
           </Link>
+          
+          {/* Authentication Section */}
+          <div className="auth-section">
+            {status === "loading" ? (
+              <div className="auth-loading">...</div>
+            ) : session ? (
+              <div className="user-profile">
+                <div className="user-info">
+                  {session.user?.image && (
+                    <img 
+                      src={session.user.image} 
+                      alt="Profile" 
+                      className="user-avatar"
+                    />
+                  )}
+                  <span className="user-name">
+                    {session.user?.name || session.user?.email}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => signOut()}
+                  className="logout-btn"
+                  title="Sign Out"
+                >
+                  ⏻
+                </button>
+              </div>
+            ) : (
+              <Link href="/login" className="login-btn">
+                <span className="login-icon">→</span>
+                <span className="login-text">Login</span>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
@@ -77,6 +113,43 @@ const ModernNavigation = () => {
         <Link href="/contact" className="mobile-contact-btn">
           Contact AI
         </Link>
+        
+        {/* Mobile Authentication */}
+        <div className="mobile-auth">
+          {status === "loading" ? (
+            <div className="mobile-auth-loading">Loading...</div>
+          ) : session ? (
+            <div className="mobile-user-profile">
+              <div className="mobile-user-info">
+                {session.user?.image && (
+                  <img 
+                    src={session.user.image} 
+                    alt="Profile" 
+                    className="mobile-user-avatar"
+                  />
+                )}
+                <span className="mobile-user-name">
+                  {session.user?.name || session.user?.email}
+                </span>
+              </div>
+              <button 
+                onClick={() => signOut()}
+                className="mobile-logout-btn"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <Link 
+              href="/login" 
+              className="mobile-login-btn"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <span className="mobile-login-icon">→</span>
+              <span className="mobile-login-text">Login</span>
+            </Link>
+          )}
+        </div>
       </div>
     </nav>
   );

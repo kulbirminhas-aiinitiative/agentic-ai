@@ -310,3 +310,202 @@
 .mobile-menu::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* Authentication Styles */
+.nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.auth-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auth-loading {
+  color: #999;
+  font-size: 0.8rem;
+}
+
+/* User Profile */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.user-name {
+  font-size: 0.8rem;
+  color: #333;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(102, 126, 234, 0.2);
+  transform: scale(1.1);
+}
+
+/* Login Button */
+.login-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.login-icon {
+  font-size: 0.9rem;
+  transition: transform 0.3s ease;
+}
+
+.login-btn:hover .login-icon {
+  transform: translateX(2px);
+}
+
+.login-text {
+  font-family: 'Courier New', monospace;
+}
+
+/* Mobile Authentication Styles */
+.mobile-auth {
+  padding: 1rem;
+  border-top: 1px solid rgba(51, 51, 51, 0.1);
+  margin-top: 1rem;
+}
+
+.mobile-auth-loading {
+  text-align: center;
+  color: #999;
+  font-size: 0.8rem;
+}
+
+.mobile-user-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.mobile-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.mobile-user-name {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.mobile-logout-btn {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  color: #667eea;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Courier New', monospace;
+}
+
+.mobile-logout-btn:hover {
+  background: rgba(102, 126, 234, 0.2);
+}
+
+.mobile-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-family: 'Courier New', monospace;
+}
+
+.mobile-login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.mobile-login-icon {
+  font-size: 1rem;
+}
+
+/* Responsive adjustments for authentication */
+@media (max-width: 768px) {
+  .nav-cta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .user-name {
+    max-width: 80px;
+  }
+  
+  .login-btn {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.8rem;
+  }
+}

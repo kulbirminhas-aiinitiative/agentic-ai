@@ -1,8 +1,9 @@
 "use client";
-import Navigation from "../../components/Navigation";
+import ModernNavigation from "../../components/ModernNavigation";
 import React, { useState } from 'react';
 import ReactFlow, { Background, Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
+import './rag-architectures.css';
 
 const ragTypes = [
 	{
@@ -497,9 +498,9 @@ export default function RagArchitecturesAdmin() {
 	};
 
 	return (
-		<div style={{ background: "#f8fafc", minHeight: "100vh" }}>
-			<Navigation />
-			<div style={{ display: "flex", maxWidth: 1200, margin: "0 auto", padding: "3rem 1.5rem" }}>
+		<div className="rag-admin-container">
+			<ModernNavigation />
+			<div className="rag-admin-main">
 				{/* Sidebar */}
 				<aside style={{ width: 260, background: "#fff", borderRight: "1px solid #e5e7eb", padding: "2rem 1rem", minHeight: 600 }}>
 					<h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 18 }}>RAG Architectures</h2>
