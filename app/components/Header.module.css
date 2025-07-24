@@ -1,0 +1,81 @@
+/* Header.module.css for Agentic AI */
+.header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 16px 32px 0 32px;
+  border-bottom: 1px solid #eee;
+  min-height: 72px;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--accent1, #0070f3);
+  text-decoration: none;
+}
+
+.brandText {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--foreground, #222);
+  margin-left: 8px;
+  font-family: var(--font-headings);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.navLink {
+  color: var(--foreground, #222);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  font-family: var(--font-ui);
+}
+
+.navLink:hover {
+  color: var(--accent1, #0070f3);
+  background: var(--accent1, #0070f3)10;
+  border-radius: 6px;
+}
+
+.loginLink {
+  color: var(--accent1, #0070f3);
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 12px;
+  font-family: var(--font-ui);
+}
+
+.signupLink {
+  color: #fff;
+  background: var(--accent1, #0070f3);
+  padding: 6px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 12px;
+  transition: background 0.2s;
+  font-family: var(--font-ui);
+}
+
+.signupLink:hover {
+  background: var(--accent2, #005bb5);
+}

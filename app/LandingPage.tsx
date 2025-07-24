@@ -1,0 +1,65 @@
+import React from 'react';
+import Link from 'next/link';
+import HeroVideo from './components/HeroVideo';
+import Image from 'next/image';
+
+const LandingPage: React.FC = () => {
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <header className="bg-white shadow">
+        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">Agentic AI</h1>
+          <nav className="space-x-4">
+            <Link href="/agents" className="text-gray-600 hover:text-gray-800">Agents</Link>
+            <Link href="/about" className="text-gray-600 hover:text-gray-800">About</Link>
+            <Link href="/login" className="text-gray-600 hover:text-gray-800">Login</Link>
+          </nav>
+        </div>
+      </header>
+      <main className="flex-1 flex flex-col">
+        <HeroVideo />
+        <section className="container mx-auto px-6 py-12">
+          <div className="flex flex-wrap justify-center gap-8 mb-12">
+            <Image src="/ai-recruitment-hero.svg" alt="AI" width={120} height={120} />
+            <Image src="/application-tracking.svg" alt="Tracking" width={120} height={120} />
+            <Image src="/benefit-ai.svg" alt="Benefit AI" width={120} height={120} />
+            <Image src="/benefit-secure.svg" alt="Secure" width={120} height={120} />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-6">Why Agentic AI?</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-lg shadow p-6 text-center">
+              <h3 className="font-semibold text-lg mb-2">No-Code Agent Builder</h3>
+              <p className="text-gray-600">Create and deploy AI agents without writing a single line of code.</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 text-center">
+              <h3 className="font-semibold text-lg mb-2">Enterprise-Grade Security</h3>
+              <p className="text-gray-600">Your data is protected with industry-leading security and compliance.</p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 text-center">
+              <h3 className="font-semibold text-lg mb-2">Seamless Integrations</h3>
+              <p className="text-gray-600">Connect with your favorite tools, APIs, and databases in minutes.</p>
+            </div>
+          </div>
+        </section>
+        <section className="bg-gray-100 py-8">
+          <div className="container mx-auto px-6 text-center">
+            <h2 className="text-xl font-bold mb-4">Trusted by teams worldwide</h2>
+            <div className="flex flex-wrap justify-center gap-6">
+              <Image src="/logo1.svg" alt="Logo 1" width={80} height={32} />
+              <Image src="/logo2.svg" alt="Logo 2" width={80} height={32} />
+              <Image src="/logo3.svg" alt="Logo 3" width={80} height={32} />
+              <Image src="/logo4.svg" alt="Logo 4" width={80} height={32} />
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className="bg-gray-800 text-white py-6">
+        <div className="container mx-auto text-center">
+          <p>&copy; 2025 Agentic AI. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default LandingPage;

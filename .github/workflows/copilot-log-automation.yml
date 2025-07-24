@@ -1,0 +1,42 @@
+name: Copilot Log Automation
+
+on:
+  push:
+    paths:
+      - 'app/**'
+      - 'logs/**'
+      - 'scripts/**'
+      - '.copilot-log-config.js'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  log-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm install
+      - name: Run website and capture output
+        run: |
+          npm run build || true
+          npm start &
+          sleep 10
+          curl -i http://localhost:3000/ > logs/web-output.log 2>&1 || true
+      - name: Run log review script
+        run: node scripts/read-logs.js
+      - name: Append summary to activity log
+        run: |
+          echo "\n---\n$(date): Website tested and logs updated." >> logs/activity-log.md
+      - name: Fail if errors found in log
+        run: |
+          if grep -i 'error' logs/web-output.log; then
+            echo 'Errors found in web-output.log. Please review and fix.'
+            exit 1
+          fi
+        shell: bash

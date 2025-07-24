@@ -3,21 +3,33 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test": "jest",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
-    "next": "15.4.2"
+    "@pinecone-database/pinecone": "^6.1.1",
+    "@types/pg": "^8.15.4",
+    "mermaid": "^11.9.0",
+    "next": "15.4.2",
+    "next-auth": "^4.24.11",
+    "pg": "^8.16.3",
+    "react-mermaid2": "^0.1.4",
+    "reactflow": "^11.11.4"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.4.2",
-    "@eslint/eslintrc": "^3"
+    "jest": "^30.0.5",
+    "puppeteer": "^24.15.0",
+    "tailwindcss": "^4",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5"
   }
 }

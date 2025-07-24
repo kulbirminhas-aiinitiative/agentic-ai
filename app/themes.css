@@ -1,0 +1,54 @@
+/*
+  themes.css: All vibrant palettes for selection via ENV
+  Usage: Add `THEME=1` (or 2, 3, 4, 5) to .env.local to pick a theme
+*/
+
+:root {
+  /* Default fallback theme (Theme 1: Vivid Rainbow Tech) */
+  --background: linear-gradient(135deg, #ff6a00 0%, #ee0979 50%, #00c3ff 100%);
+  --foreground: #212121;
+  --accent1: #ff6a00;
+  --accent2: #ee0979;
+  --accent3: #00c3ff;
+  --accent4: #f9d423;
+}
+
+[data-theme="2"] {
+  /* Theme 2: Miami Sunset */
+  --background: linear-gradient(135deg, #ff5e62 0%, #ff9966 100%);
+  --foreground: #22223b;
+  --accent1: #ff5e62;
+  --accent2: #ff9966;
+  --accent3: #f9d423;
+  --accent4: #24c6dc;
+}
+
+[data-theme="3"] {
+  /* Theme 3: Aurora Borealis */
+  --background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+  --foreground: #0a0a0a;
+  --accent1: #43cea2;
+  --accent2: #185a9d;
+  --accent3: #f7971e;
+  --accent4: #fd1d1d;
+}
+
+[data-theme="4"] {
+  /* Theme 4: Candy Pop */
+  --background: linear-gradient(135deg, #f953c6 0%, #b91d73 100%);
+  --foreground: #fff;
+  --accent1: #f953c6;
+  --accent2: #b91d73;
+  --accent3: #f9d423;
+  --accent4: #30cfd0;
+}
+
+[data-theme="5"] {
+  /* Theme 5: Neon Lights */
+  --background: linear-gradient(135deg, #fc00ff 0%, #00dbde 100%);
+  --foreground: #222;
+  --accent1: #fc00ff;
+  --accent2: #00dbde;
+  --accent3: #ffe53b;
+  --accent4: #ff2525;
+}
