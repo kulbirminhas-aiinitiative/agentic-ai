@@ -40,8 +40,17 @@ index = pc.Index(PINECONE_INDEX_NAME)
 vector_store = PineconeVectorStore(pinecone_index=index)
 
 def get_llama_index():
-    documents = SimpleDirectoryReader('data').load_data()
-    return VectorStoreIndex.from_documents(documents, vector_store=vector_store, model_name=MODEL_NAME)
+    # Check for actual files (not directories) in the data folder
+    data_files = []
+    if os.path.exists('data'):
+        data_files = [f for f in os.listdir('data') if os.path.isfile(os.path.join('data', f))]
+    
+    if data_files:
+        documents = SimpleDirectoryReader('data').load_data()
+        return VectorStoreIndex.from_documents(documents, vector_store=vector_store, model_name=MODEL_NAME)
+    else:
+        # No files in data directory, return empty index
+        return VectorStoreIndex([], vector_store=vector_store)
 
 @app.post("/process-file/")
 async def process_file(file: UploadFile = File(...)):

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 // RAG architectures (sync with rag-architectures/page.tsx)
 const ragTypes = [
@@ -34,13 +35,21 @@ export default function AgentManager({ onSelect }: AgentManagerProps) {
   const [ragArch, setRagArch] = useState(ragTypes[0].key);
 
   useEffect(() => {
+    console.log('AgentManager: Fetching agents...');
     fetch("/api/agents")
-      .then((res) => res.json())
+      .then((res) => {
+        console.log('AgentManager: API response status:', res.status);
+        return res.json();
+      })
       .then((data) => {
+        console.log('AgentManager: API response data:', data);
         setAgents(data.agents || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((error) => {
+        console.error('AgentManager: Fetch error:', error);
+        setLoading(false);
+      });
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -93,13 +102,14 @@ export default function AgentManager({ onSelect }: AgentManagerProps) {
 
   return (
     <div>
-      <div style={{ margin: "32px 0", padding: 24, background: "#f1f5f9", borderRadius: 10, maxWidth: 480 }}>
-        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Create New Agent</h3>
+      <div className="card" style={{ margin: "var(--spacing-lg) 0", maxWidth: '480px' }}>
+        <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-primary)' }}>Create New Agent</h3>
         <form onSubmit={handleCreate}>
           <input
             name="name"
             placeholder="Agent Name"
-            style={{ marginBottom: 8, width: '100%', padding: 8, borderRadius: 4, border: '1px solid #ccc' }}
+            className="form-input"
+            style={{ marginBottom: 'var(--spacing-xs)' }}
             required
             value={name}
             onChange={e => setName(e.target.value)}
@@ -107,40 +117,71 @@ export default function AgentManager({ onSelect }: AgentManagerProps) {
           <textarea
             name="description"
             placeholder="Description"
-            style={{ marginBottom: 8, width: '100%', padding: 8, borderRadius: 4, border: '1px solid #ccc' }}
+            className="form-input"
+            style={{ marginBottom: 'var(--spacing-xs)', minHeight: '80px', resize: 'vertical' }}
             value={description}
             onChange={e => setDescription(e.target.value)}
           />
-          <div style={{ marginBottom: 8 }}>
-            <label style={{ fontWeight: 500, marginRight: 8 }}>RAG Architecture:</label>
-            <select value={ragArch} onChange={e => setRagArch(e.target.value)} style={{ padding: 6, borderRadius: 4, border: '1px solid #ccc' }}>
+          <div style={{ marginBottom: 'var(--spacing-xs)' }}>
+            <label style={{ fontWeight: 'var(--font-weight-medium)', marginRight: 'var(--spacing-xs)', color: 'var(--color-text-primary)' }}>RAG Architecture:</label>
+            <select 
+              value={ragArch} 
+              onChange={e => setRagArch(e.target.value)} 
+              className="form-input"
+              style={{ display: 'inline-block', width: 'auto', minWidth: '200px' }}
+            >
               {ragTypes.map(rt => (
                 <option key={rt.key} value={rt.key}>{rt.label}</option>
               ))}
             </select>
           </div>
-          <button type="submit" style={{ background: "#38bdf8", color: "#fff", fontWeight: 600, border: "none", borderRadius: 6, padding: "8px 18px", cursor: "pointer" }}>
+          <button type="submit" className="btn btn-primary">
             Create Agent
           </button>
         </form>
       </div>
-      <div style={{ margin: "32px 0", padding: 24, background: "#f8fafc", borderRadius: 10, maxWidth: 480 }}>
-        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Agents List</h3>
+      <div className="card" style={{ margin: "var(--spacing-lg) 0", maxWidth: '480px' }}>
+        <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-primary)' }}>Agents List</h3>
+        {(() => {
+          console.log('AgentManager render: loading =', loading, 'agents =', agents, 'agents.length =', agents.length);
+          return null;
+        })()}
         {loading ? (
-          <div>Loading agents...</div>
+          <div style={{ color: 'var(--color-text-secondary)' }}>Loading agents...</div>
         ) : !agents.length ? (
-          <div>No agents found.</div>
+          <div style={{ color: 'var(--color-text-secondary)' }}>No agents found.</div>
         ) : (
           <ul style={{ paddingLeft: 0 }}>
             {agents.map((a) => (
-              <li key={a.id} style={{ marginBottom: 8, listStyle: 'none', background: '#fff', borderRadius: 6, padding: 10, border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <li key={a.id} style={{ 
+                marginBottom: 'var(--spacing-xs)', 
+                listStyle: 'none', 
+                background: 'var(--color-background)', 
+                borderRadius: 'var(--radius-md)', 
+                padding: 'var(--spacing-sm)', 
+                border: '1px solid var(--color-border)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between' 
+              }}>
                 <div>
-                  <strong>{a.name}</strong>
-                  <div style={{ color: '#555', fontSize: 14 }}>{a.description}</div>
+                  <strong style={{ color: 'var(--color-text-primary)' }}>{a.name}</strong> 
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginLeft: 'var(--spacing-xs)' }}>#{a.id}</span>
+                  <div style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--spacing-xs)' }}>{a.description}</div>
+                  <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--spacing-xs)' }}>RAG: {a.rag_architecture}</div>
                 </div>
-                <button onClick={() => handleDelete(a.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 12px', fontWeight: 600, cursor: 'pointer', marginLeft: 12 }}>
-                  Delete
-                </button>
+                <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
+                  <Link 
+                    href={`/chat/${a.id}`}
+                    className="btn btn-success btn-sm"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    Chat
+                  </Link>
+                  <button onClick={() => handleDelete(a.id)} className="btn btn-danger btn-sm">
+                    Delete
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

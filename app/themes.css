@@ -1,54 +1,104 @@
 /*
-  themes.css: All vibrant palettes for selection via ENV
+  themes.css: Professional color themes for Agentic AI Platform
   Usage: Add `THEME=1` (or 2, 3, 4, 5) to .env.local to pick a theme
 */
 
 :root {
-  /* Default fallback theme (Theme 1: Vivid Rainbow Tech) */
-  --background: linear-gradient(135deg, #ff6a00 0%, #ee0979 50%, #00c3ff 100%);
-  --foreground: #212121;
-  --accent1: #ff6a00;
-  --accent2: #ee0979;
-  --accent3: #00c3ff;
-  --accent4: #f9d423;
+  /* Default theme (Theme 1: Professional Blue) */
+  --color-background: #ffffff;
+  --color-surface: #f8fafc;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e2e8f0;
+  --color-border-hover: #cbd5e1;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-error: #ef4444;
+  --color-error-hover: #dc2626;
 }
 
 [data-theme="2"] {
-  /* Theme 2: Miami Sunset */
-  --background: linear-gradient(135deg, #ff5e62 0%, #ff9966 100%);
-  --foreground: #22223b;
-  --accent1: #ff5e62;
-  --accent2: #ff9966;
-  --accent3: #f9d423;
-  --accent4: #24c6dc;
+  /* Theme 2: Modern Green */
+  --color-background: #ffffff;
+  --color-surface: #f0fdf4;
+  --color-surface-elevated: #ffffff;
+  --color-border: #dcfce7;
+  --color-border-hover: #bbf7d0;
+  --color-text-primary: #14532d;
+  --color-text-secondary: #166534;
+  --color-text-muted: #22c55e;
+  --color-primary: #16a34a;
+  --color-primary-hover: #15803d;
+  --color-success: #22c55e;
+  --color-success-hover: #16a34a;
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-error: #ef4444;
+  --color-error-hover: #dc2626;
 }
 
 [data-theme="3"] {
-  /* Theme 3: Aurora Borealis */
-  --background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
-  --foreground: #0a0a0a;
-  --accent1: #43cea2;
-  --accent2: #185a9d;
-  --accent3: #f7971e;
-  --accent4: #fd1d1d;
+  /* Theme 3: Elegant Purple */
+  --color-background: #ffffff;
+  --color-surface: #faf5ff;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e9d5ff;
+  --color-border-hover: #d8b4fe;
+  --color-text-primary: #581c87;
+  --color-text-secondary: #7c3aed;
+  --color-text-muted: #a855f7;
+  --color-primary: #8b5cf6;
+  --color-primary-hover: #7c3aed;
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-error: #ef4444;
+  --color-error-hover: #dc2626;
 }
 
 [data-theme="4"] {
-  /* Theme 4: Candy Pop */
-  --background: linear-gradient(135deg, #f953c6 0%, #b91d73 100%);
-  --foreground: #fff;
-  --accent1: #f953c6;
-  --accent2: #b91d73;
-  --accent3: #f9d423;
-  --accent4: #30cfd0;
+  /* Theme 4: Warm Orange */
+  --color-background: #ffffff;
+  --color-surface: #fff7ed;
+  --color-surface-elevated: #ffffff;
+  --color-border: #fed7aa;
+  --color-border-hover: #fdba74;
+  --color-text-primary: #9a3412;
+  --color-text-secondary: #c2410c;
+  --color-text-muted: #ea580c;
+  --color-primary: #f97316;
+  --color-primary-hover: #ea580c;
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-error: #ef4444;
+  --color-error-hover: #dc2626;
 }
 
 [data-theme="5"] {
-  /* Theme 5: Neon Lights */
-  --background: linear-gradient(135deg, #fc00ff 0%, #00dbde 100%);
-  --foreground: #222;
-  --accent1: #fc00ff;
-  --accent2: #00dbde;
-  --accent3: #ffe53b;
-  --accent4: #ff2525;
+  /* Theme 5: Dark Mode */
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-elevated: #334155;
+  --color-border: #475569;
+  --color-border-hover: #64748b;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #e2e8f0;
+  --color-text-muted: #cbd5e1;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-error: #ef4444;
+  --color-error-hover: #dc2626;
 }

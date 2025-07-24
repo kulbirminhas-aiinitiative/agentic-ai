@@ -50,6 +50,68 @@ This log captures each step, file change, and website test result for the Agenti
 - **Test Result**: Significantly reduced runtime errors from 30+ to 1 (only 404 error remaining)
 - **Status**: ✅ Major improvements made, minimal errors remain
 
+## 2025-07-24: Implemented Agent-Specific Chat System with Settings Integration
+- **Issue**: User requested agent-specific chat pages (/chat/{agent_id}) where each agent uses its configured settings
+- **Action**: 
+  - Created dynamic route `/chat/[id]` for agent-specific chat interfaces
+  - Built comprehensive agent chat page that loads agent details and settings
+  - Integrated agent-specific settings (temperature, model, max_tokens, etc.) into chat API calls
+  - Updated AgentManager to display agent IDs and include "Chat" buttons linking to agent-specific chats
+  - Enhanced agent list display with agent ID visibility and RAG architecture info
+  - Modified chat interface to show current agent settings in header
+  - Implemented proper loading states and error handling for agent data
+- **Files Changed**: 
+  - `app/chat/[id]/page.tsx` (new) - Agent-specific chat interface with settings integration
+  - `app/components/AgentManager.tsx` - Added Chat buttons and agent ID display
+  - `app/api/agent-settings/route.ts` - Added POST method for bulk settings updates
+- **Features Added**:
+  - Agent selection in General Settings with settings persistence per agent
+  - Dynamic chat routes: `/chat/1`, `/chat/2`, etc. for each agent
+  - Agent-specific UI showing agent name, description, and current settings
+  - Chat interface that applies agent's configured model parameters
+  - Real-time settings display in chat header (model, temperature, max tokens)
+- **Test Result**: Agent-specific chat pages working, settings properly loaded and applied
+- **Status**: ✅ Complete agent-specific chat system implemented with full settings integration
+
+## 2025-07-24: Enhanced General Settings with Agent-Specific Configuration
+- **Issue**: User requested General Settings to be mapped to specific agents with agent selection
+- **Action**: 
+  - Added agent selection dropdown to General Settings section
+  - Implemented agent-specific settings loading from agent_settings table
+  - Created save functionality to persist settings mapped to agent IDs
+  - Enhanced UI with agent selection requirement and loading states
+  - Updated settings to be stored and retrieved per agent ID
+- **Files Changed**: 
+  - `app/components/dashboard/GeneralSettingsSection.tsx` - Complete rewrite with agent selection
+  - `app/api/agent-settings/route.ts` - Added bulk POST method for settings updates
+- **Features Added**:
+  - Agent dropdown with display_name support
+  - Individual agent settings persistence
+  - Loading states during agent and settings fetch
+  - Save button with confirmation feedback
+  - Settings validation and error handling
+- **Test Result**: Settings successfully saved and loaded per agent
+- **Status**: ✅ Agent-specific settings system fully implemented
+
+## 2025-07-24: Version Control - Committed All Changes to GitHub
+- **Issue**: User requested to version control all code changes in GitHub
+- **Action**: 
+  - Used `git add .` to stage all modified and new files
+  - Created comprehensive commit message documenting all major changes
+  - Used PowerShell-compatible syntax with backtick-n for multi-line commit message
+  - Successfully pushed all changes to GitHub repository (kulbirminhas-aiinitiative/agentic-ai)
+- **Files Committed**: 
+  - All app/ directory structure with Navigation system
+  - Complete agents/ page (renamed from dashboard)
+  - All dashboard components with "use client" fixes
+  - Automated testing and logging infrastructure (scripts/, logs/)
+  - Updated package.json, tsconfig.json, and configuration files
+  - GitHub workflow automation (.github/)
+  - RAG implementation files and documentation
+- **Commit Hash**: affff9c (pushed to origin/main)
+- **Test Result**: Working tree clean, all changes successfully version controlled
+- **Status**: ✅ All code successfully committed and pushed to GitHub
+
 ## 2025-07-24: Removed Create Agent Page and Renamed Dashboard to Agents
 - **Issue**: User requested to remove Create Agent page and rename Dashboard to Agents, ensure navigation consistency
 - **Action**: 

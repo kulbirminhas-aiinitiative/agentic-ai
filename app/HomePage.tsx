@@ -13,16 +13,38 @@ export default function HomePage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--color-surface)' }}>
       <Navigation />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-        <h1 style={{ fontSize: 48, fontWeight: 800, marginBottom: 24, color: '#181e2a', textAlign: 'center' }}>
+      <main className="container flex flex-col items-center justify-center" style={{ flex: 1, padding: 'var(--spacing-3xl) var(--spacing-lg)' }}>
+        <h1 style={{ 
+          fontSize: '3rem', 
+          fontWeight: 800, 
+          marginBottom: 'var(--spacing-lg)', 
+          color: 'var(--color-text-primary)', 
+          textAlign: 'center',
+          letterSpacing: '-0.05em'
+        }}>
           Welcome to Agentic AI
         </h1>
-        <p style={{ fontSize: 20, color: '#374151', maxWidth: 600, textAlign: 'center', marginBottom: 40 }}>
+        <p style={{ 
+          fontSize: '1.25rem', 
+          color: 'var(--color-text-secondary)', 
+          maxWidth: '600px', 
+          textAlign: 'center', 
+          marginBottom: 'var(--spacing-2xl)',
+          lineHeight: 1.7
+        }}>
           Build, manage, and deploy intelligent AI agents for your business. Get started by creating a new agent or exploring the platform features below.
         </p>
-        <form onSubmit={handleSearch} style={{ width: 480, maxWidth: '90vw', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
+        <form onSubmit={handleSearch} className="card" style={{ 
+          width: '100%', 
+          maxWidth: '480px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          marginBottom: 'var(--spacing-xl)',
+          padding: 'var(--spacing-xl)'
+        }}>
           <input
             type="text"
             value={query}
@@ -30,55 +52,58 @@ export default function HomePage() {
             placeholder="Search agents, knowledge, or anything..."
             style={{
               width: '100%',
-              padding: '16px 24px',
-              borderRadius: 24,
-              border: '1px solid #ddd',
-              fontSize: 20,
-              marginBottom: 24,
+              padding: 'var(--spacing-md) var(--spacing-lg)',
+              borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--color-border)',
+              fontSize: '1rem',
+              marginBottom: 'var(--spacing-lg)',
               outline: 'none',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+              backgroundColor: 'var(--color-background)',
+              color: 'var(--color-text-primary)',
+              transition: 'all 0.2s ease'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = 'var(--color-primary)';
+              e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'var(--color-border)';
+              e.target.style.boxShadow = 'none';
             }}
           />
-          <button
-            type="submit"
-            style={{
-              padding: '10px 36px',
-              borderRadius: 24,
-              background: '#4285f4',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 18,
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(60,64,67,.08)'
-            }}
-          >
-            Search
+          <button type="submit" className="btn btn-primary btn-lg" style={{ marginBottom: 'var(--spacing-md)' }}>
+            Search Platform
           </button>
         </form>
         {result && (
-          <div style={{ marginTop: 8, fontSize: 20, color: '#444', background: '#fafafa', borderRadius: 12, padding: '20px 40px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div className="card" style={{ 
+            marginTop: 'var(--spacing-md)', 
+            fontSize: 'var(--font-size-lg)', 
+            color: 'var(--color-text-primary)' 
+          }}>
             {result}
           </div>
         )}
-        <Link href="/agents" style={{
-          background: '#38bdf8',
-          color: '#fff',
-          padding: '1rem 2.5rem',
-          borderRadius: 32,
-          fontWeight: 700,
-          fontSize: 20,
-          textDecoration: 'none',
-          boxShadow: '0 2px 8px rgba(56,189,248,0.12)',
-          marginTop: 40
-        }}>
+        <Link href="/agents" className="btn btn-primary btn-lg" style={{ marginTop: 'var(--spacing-xl)' }}>
           + Manage Agents
         </Link>
-        <div style={{ marginTop: 32, color: '#64748b', fontSize: 16, textAlign: 'center', maxWidth: 600 }}>
+        <div style={{ 
+          marginTop: 'var(--spacing-lg)', 
+          color: 'var(--color-text-secondary)', 
+          fontSize: 'var(--font-size-base)', 
+          textAlign: 'center', 
+          maxWidth: '600px' 
+        }}>
           <p>Agentic AI empowers you to automate workflows, integrate with your favorite tools, and deliver smarter customer experiences. No coding required.</p>
         </div>
       </main>
-      <footer style={{ padding: '1rem 0', textAlign: 'center', color: '#888', fontSize: 15, borderTop: '1px solid #eee' }}>
+      <footer style={{ 
+        padding: 'var(--spacing-md) 0', 
+        textAlign: 'center', 
+        color: 'var(--color-text-secondary)', 
+        fontSize: 'var(--font-size-sm)', 
+        borderTop: '1px solid var(--color-border)' 
+      }}>
         &copy; 2025 Agentic AI. All rights reserved.
       </footer>
     </div>
