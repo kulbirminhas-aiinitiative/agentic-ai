@@ -9,7 +9,7 @@ const ModernNavigation = () => {
 
   const navigationItems = [
     { label: 'Home', href: '/', icon: '◯' },
-    { label: 'Agents', href: '/agents', icon: '◎' },
+    { label: 'My Agents', href: '/agents', icon: '◎' },
     { label: 'Dashboard', href: '/dashboard', icon: '◐' },
     { label: 'Create Agent', href: '/create-agent', icon: '◑' },
     { label: 'Chat', href: '/chat', icon: '◒' },

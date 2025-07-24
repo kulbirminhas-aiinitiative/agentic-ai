@@ -8,6 +8,9 @@
 /* Import Fine Thought inspired components */
 @import './components/FineThoughtInspiredLanding.css';
 @import './components/ModernNavigation.css';
+@import './agents/agents-page.css';
+@import './dashboard/dashboard.css';
+@import './create-agent/create-agent.css';
 
 :root {
   /* Typography */
