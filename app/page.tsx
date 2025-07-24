@@ -1,7 +1,7 @@
-import HomePage from './HomePage';
+import FineThoughtInspiredLanding from './components/FineThoughtInspiredLanding';
 
 export default function Home() {
-  return <HomePage />;
+  return <FineThoughtInspiredLanding />;
 }
 
 
