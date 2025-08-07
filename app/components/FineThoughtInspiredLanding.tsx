@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import ModernNavigation from './ModernNavigation';
+import Footer from './Footer';
 import './FineThoughtInspiredLanding.css';
 
 const FineThoughtInspiredLanding = () => {
@@ -99,11 +100,7 @@ const FineThoughtInspiredLanding = () => {
       </section>
 
       {/* Footer */}
-      <footer className="footer">
-        <div className="footer-title">
-          <h3>AI Agent<br/><span className="highlight">&amp; automation</span></h3>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

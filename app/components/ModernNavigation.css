@@ -42,7 +42,7 @@
 
 .brand-subtitle {
   font-size: 0.7rem;
-  color: #999;
+  color: #999 !important;
   margin: 0;
   text-transform: lowercase;
 }

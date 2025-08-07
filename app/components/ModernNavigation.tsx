@@ -15,7 +15,6 @@ const ModernNavigation = () => {
     { label: 'Dashboard', href: '/dashboard', icon: '◐' },
     { label: 'Create Agent', href: '/create-agent', icon: '◑' },
     { label: 'Chat', href: '/chat', icon: '◒' },
-    { label: 'About', href: '/about', icon: '◓' },
   ];
 
   return (

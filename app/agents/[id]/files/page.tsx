@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ModernNavigation from '../../../components/ModernNavigation';
+import Footer from '../../../components/Footer';
 
 interface Agent {
   id: number;
@@ -330,6 +331,8 @@ export default function AgentFilesPage() {
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }

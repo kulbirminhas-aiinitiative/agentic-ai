@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import ModernNavigation from "../../components/ModernNavigation";
+import Footer from "../../components/Footer";
 
 interface Agent {
   id: number;
@@ -426,6 +427,8 @@ export default function AgentChat() {
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }

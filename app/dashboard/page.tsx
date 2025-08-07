@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import ModernNavigation from '../components/ModernNavigation';
+import Footer from '../components/Footer';
 import './dashboard.css';
 
 interface DashboardStats {
@@ -286,14 +287,6 @@ const Dashboard = () => {
                   <div className="action-desc">Talk to your agents</div>
                 </div>
               </a>
-              
-              <a href="/about" className="action-item">
-                <div className="action-icon">◓</div>
-                <div className="action-content">
-                  <div className="action-title">Documentation</div>
-                  <div className="action-desc">Learn more</div>
-                </div>
-              </a>
             </div>
           </div>
 
@@ -334,6 +327,8 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };

@@ -1,242 +1,96 @@
 "use client";
-import { useState } from "react";
-import ModernNavigation from "../components/ModernNavigation";
-import './chat.css';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function Chat() {
-  const [messages, setMessages] = useState<{ user: string, text: string }[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
-  const [showLogs, setShowLogs] = useState(false);
+export default function ChatPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  async function handleSend() {
-    if (!input.trim()) return;
-
-    const userMessage = { user: "You", text: input };
-    setMessages(prev => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
-
-    setLogs(prev => [
-      ...prev,
-      `User input: ${input}`
-    ]);
-
-    try {
-      const payload = {
-        messages: [
-          ...messages.map(m => ({ role: m.user === "You" ? "user" : "assistant", content: m.text })),
-          { role: "user", content: input }
-        ],
-        model: "gpt-4o",
-        temperature: 0.7,
-        max_tokens: 512
-      };
-      setLogs(prev => [
-        ...prev,
-        `Sending to /api/chat: ${JSON.stringify(payload)}`
-      ]);
-
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setLogs(prev => [
-          ...prev,
-          `Received response: ${JSON.stringify(data)}`
-        ]);
-        if (data.choices && data.choices[0]) {
-          setMessages(prev => [...prev, { user: "AI", text: data.choices[0].message.content }]);
-        } else {
-          setMessages(prev => [...prev, { user: "AI", text: "I received your message but couldn't generate a response." }]);
+  useEffect(() => {
+    const redirectToFirstAgent = async () => {
+      try {
+        // Fetch agents from the backend
+        const response = await fetch('http://localhost:8000/agents');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch agents');
         }
-      } else {
-        setLogs(prev => [
-          ...prev,
-          `HTTP Error: ${response.status} ${response.statusText}`
-        ]);
-        setMessages(prev => [...prev, { user: "AI", text: "Sorry, I encountered an error." }]);
+        
+        const agents = await response.json();
+        
+        if (agents && agents.length > 0) {
+          // Redirect to the first agent's chat
+          const firstAgentId = agents[0].id;
+          router.push(`/chat/${firstAgentId}`);
+        } else {
+          // No agents available, redirect to create agent page
+          router.push('/create-agent');
+        }
+      } catch (err) {
+        console.error('Error fetching agents:', err);
+        setError('Unable to load agents. Redirecting to agents page...');
+        // Fallback to agents page after a delay
+        setTimeout(() => {
+          router.push('/agents');
+        }, 2000);
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      setLogs(prev => [
-        ...prev,
-        `Error: ${error?.message || error}`
-      ]);
-      setMessages(prev => [...prev, { user: "AI", text: "Sorry, I couldn't connect to the server." }]);
-    }
+    };
 
-    setIsLoading(false);
+    redirectToFirstAgent();
+  }, [router]);
+
+  if (error) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div style={{ color: '#d32f2f' }}>{error}</div>
+        <div style={{ fontSize: '0.9rem', color: '#666' }}>
+          Please check if the backend is running on port 8000
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="chat-container">
-      <ModernNavigation />
-      
-      <main className="chat-main">
-        {/* Chat Header */}
-        <div className="chat-header">
-          <div className="header-content">
-            <h1 className="chat-title">
-              <span className="chat-icon">◒</span>
-              AI Chat Interface
-            </h1>
-            <p className="chat-subtitle">
-              Intelligent conversations powered by your knowledge base
-            </p>
-          </div>
-          
-          <div className="chat-controls">
-            <button 
-              className={`control-btn ${showLogs ? 'active' : ''}`}
-              onClick={() => setShowLogs(!showLogs)}
-            >
-              <span className="btn-icon">◓</span>
-              Logs
-            </button>
-            <button 
-              className="control-btn"
-              onClick={() => {
-                setMessages([]);
-                setLogs([]);
-              }}
-            >
-              <span className="btn-icon">◯</span>
-              Clear
-            </button>
-          </div>
-        </div>
-
-        <div className="chat-layout">
-          {/* Main Chat Area */}
-          <div className="chat-area">
-            {/* Messages Container */}
-            <div className="messages-container">
-              {messages.length === 0 ? (
-                <div className="empty-chat">
-                  <div className="empty-icon">◒</div>
-                  <h3>Start a conversation</h3>
-                  <p>Ask me anything! I can help you with information from your uploaded documents.</p>
-                  <div className="sample-questions">
-                    <div className="sample-title">Try asking:</div>
-                    <button 
-                      className="sample-btn"
-                      onClick={() => setInput("What information do you have?")}
-                    >
-                      "What information do you have?"
-                    </button>
-                    <button 
-                      className="sample-btn"
-                      onClick={() => setInput("Summarize the key points")}
-                    >
-                      "Summarize the key points"
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="messages-list">
-                  {messages.map((msg, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`message ${msg.user === "You" ? 'user-message' : 'ai-message'}`}
-                    >
-                      <div className="message-avatar">
-                        {msg.user === "You" ? '◑' : '◒'}
-                      </div>
-                      <div className="message-content">
-                        <div className="message-header">
-                          <span className="message-author">{msg.user}</span>
-                          <span className="message-time">
-                            {new Date().toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <div className="message-text">{msg.text}</div>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {isLoading && (
-                    <div className="message ai-message loading">
-                      <div className="message-avatar">◒</div>
-                      <div className="message-content">
-                        <div className="message-header">
-                          <span className="message-author">AI</span>
-                        </div>
-                        <div className="message-text">
-                          <div className="typing-indicator">
-                            <span className="typing-dot"></span>
-                            <span className="typing-dot"></span>
-                            <span className="typing-dot"></span>
-                          </div>
-                          Thinking...
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Input Area */}
-            <div className="input-area">
-              <div className="input-container">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                  placeholder="Type your message..."
-                  className="chat-input"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
-                  className="send-btn"
-                >
-                  <span className="send-icon">↗</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Logs Panel */}
-          {showLogs && (
-            <div className="logs-panel">
-              <div className="logs-header">
-                <h3>
-                  <span className="logs-icon">◓</span>
-                  Debug Logs
-                </h3>
-                <button 
-                  className="close-logs"
-                  onClick={() => setShowLogs(false)}
-                >
-                  ×
-                </button>
-              </div>
-              <div className="logs-content">
-                {logs.length === 0 ? (
-                  <div className="no-logs">No logs yet</div>
-                ) : (
-                  logs.map((log, idx) => (
-                    <div key={idx} className="log-entry">
-                      <span className="log-time">
-                        {new Date().toLocaleTimeString()}
-                      </span>
-                      <span className="log-text">{log}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '50vh',
+      flexDirection: 'column',
+      gap: '1rem'
+    }}>
+      <div>
+        {loading ? 'Loading agents...' : 'Redirecting to chat...'}
+      </div>
+      <div style={{ fontSize: '0.9rem', color: '#666' }}>
+        Finding the first available agent for you
+      </div>
+      {loading && (
+        <div style={{ 
+          width: '20px', 
+          height: '20px', 
+          border: '2px solid #f3f3f3',
+          borderTop: '2px solid #3498db',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
+      )}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

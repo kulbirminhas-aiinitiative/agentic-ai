@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ModernNavigation from '../components/ModernNavigation';
+import Footer from '../components/Footer';
 import './agents-page.css';
 
 interface Agent {
@@ -255,6 +256,8 @@ const AgentsPage = () => {
           </div>
         )}
       </main>
+      
+      <Footer />
     </div>
   );
 };

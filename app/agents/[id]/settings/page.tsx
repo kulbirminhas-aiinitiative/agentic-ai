@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ModernNavigation from '../../../components/ModernNavigation';
+import Footer from '../../../components/Footer';
 
 interface AgentSettings {
   model?: string;
@@ -333,6 +334,8 @@ export default function AgentSettingsPage() {
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }

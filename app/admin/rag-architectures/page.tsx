@@ -1,5 +1,6 @@
 "use client";
 import ModernNavigation from "../../components/ModernNavigation";
+import Footer from "../../components/Footer";
 import React, { useState } from 'react';
 import ReactFlow, { Background, Controls } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -617,6 +618,8 @@ export default function RagArchitecturesAdmin() {
 					)}
 				</main>
 			</div>
+			
+			<Footer />
 		</div>
 	);
 }

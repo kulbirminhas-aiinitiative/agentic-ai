@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import ModernNavigation from '../components/ModernNavigation';
+import Footer from '../components/Footer';
 import './create-agent.css';
 
 interface AgentForm {
@@ -475,6 +476,8 @@ const CreateAgentPage = () => {
           )}
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };
