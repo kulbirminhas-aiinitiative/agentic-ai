@@ -162,6 +162,69 @@ def create_agent_index(agent_id: str) -> Optional[VectorStoreIndex]:
         traceback.print_exc()
         return None
 
+def provide_basic_document_content(agent_id: str, query: str, files: List[str]) -> Dict[str, Any]:
+    """Provide basic document content reading when RAG is not available"""
+    try:
+        agent_dir = get_agent_data_directory(agent_id)
+        document_content = ""
+        
+        # Read content from uploaded files
+        for filename in files[:3]:  # Limit to first 3 files to avoid overwhelming
+            file_path = agent_dir / filename
+            if file_path.exists():
+                try:
+                    # Read file content based on type
+                    if filename.lower().endswith('.txt'):
+                        content = file_path.read_text(encoding='utf-8')
+                    elif filename.lower().endswith('.md'):
+                        content = file_path.read_text(encoding='utf-8')
+                    else:
+                        # For other file types, try to read as text
+                        try:
+                            content = file_path.read_text(encoding='utf-8')
+                        except:
+                            content = f"[File {filename} could not be read as text]"
+                    
+                    # Limit content length to avoid API issues
+                    if len(content) > 2000:
+                        content = content[:2000] + "... [truncated]"
+                    
+                    document_content += f"\n--- Content from {filename} ---\n{content}\n"
+                    
+                except Exception as e:
+                    document_content += f"\n--- Error reading {filename}: {e} ---\n"
+        
+        if not document_content.strip():
+            response_text = f"I have {len(files)} file(s) uploaded ({', '.join(files)}), but I'm unable to read their content at the moment due to API limitations. Please check the OpenAI API quota or try again later."
+        else:
+            # Provide a basic response with document content
+            response_text = f"""Based on the documents uploaded for this agent, here's what I can tell you:
+
+Files available: {', '.join(files)}
+
+Document content:
+{document_content}
+
+Note: This is a basic content view due to API quota limitations. For enhanced AI-powered analysis and question answering, please ensure your OpenAI API quota is available."""
+
+        return {
+            "response": response_text,
+            "status": "basic_content_mode",
+            "files": files,
+            "rag_used": False,
+            "content_provided": True
+        }
+        
+    except Exception as e:
+        print(f"❌ Error in provide_basic_document_content: {e}")
+        return {
+            "response": f"I can see you have {len(files)} document(s) uploaded: {', '.join(files)}, but I'm experiencing technical difficulties accessing the content. Error: {str(e)}",
+            "status": "error",
+            "files": files,
+            "rag_used": False,
+            "error": str(e)
+        }
+
 def query_agent_documents(agent_id: str, query: str) -> Dict[str, Any]:
     """Query agent documents with enhanced error handling"""
     files = []  # Initialize files as empty list
@@ -182,7 +245,7 @@ def query_agent_documents(agent_id: str, query: str) -> Dict[str, Any]:
                 "rag_used": False
             }
         
-        # Try RAG if available
+        # Try RAG if available and quota permits
         if rag_initialized:
             index = create_agent_index(agent_id)
             
@@ -210,7 +273,13 @@ def query_agent_documents(agent_id: str, query: str) -> Dict[str, Any]:
                 except Exception as e:
                     print(f"❌ RAG query failed for agent {agent_id}: {e}")
                     traceback.print_exc()
+                    # Check if it's a quota error and provide basic file content
+                    if "insufficient_quota" in str(e) or "429" in str(e):
+                        return provide_basic_document_content(agent_id, query, files)
                     # Fall through to fallback response
+        
+        # Enhanced fallback with basic document reading when RAG fails
+        return provide_basic_document_content(agent_id, query, files)
             
         # Fallback response when RAG is not available or fails
         # Ensure files is a list before joining
@@ -251,8 +320,96 @@ async def root():
         "version": "2.0.0",
         "rag_available": RAG_AVAILABLE,
         "rag_initialized": rag_initialized,
-        "endpoints": ["/health", "/query", "/agent-files/{agent_id}", "/process-agent-file"]
+        "endpoints": ["/health", "/query", "/agents", "/agent-files/{agent_id}", "/process-agent-file"]
     }
+
+@app.get("/agents")
+async def get_agents():
+    """Get all agents endpoint - compatible with frontend expectations"""
+    try:
+        # For now, return a list of agents based on the data/agents directory structure
+        agents = []
+        agents_dir = Path("data/agents")
+        
+        if agents_dir.exists():
+            agent_id = 1
+            for agent_dir in agents_dir.iterdir():
+                if agent_dir.is_dir():
+                    files = get_agent_files(agent_dir.name)
+                    agents.append({
+                        "id": agent_id,
+                        "name": agent_dir.name,
+                        "display_name": agent_dir.name.replace("_", " ").title(),
+                        "description": f"AI Agent with {len(files)} uploaded documents",
+                        "rag_architecture": "llamaindex-pinecone",
+                        "created_at": "2024-01-01T00:00:00.000Z",
+                        "updated_at": "2024-01-01T00:00:00.000Z",
+                        "is_active": True,
+                        "file_count": len(files),
+                        "files": files
+                    })
+                    agent_id += 1
+        
+        # If no agents found in filesystem, return some default agents
+        if not agents:
+            agents = [
+                {
+                    "id": 1,
+                    "name": "default_agent",
+                    "display_name": "Default Agent",
+                    "description": "Default AI Agent for general queries",
+                    "rag_architecture": "llamaindex-pinecone",
+                    "created_at": "2024-01-01T00:00:00.000Z",
+                    "updated_at": "2024-01-01T00:00:00.000Z",
+                    "is_active": True,
+                    "file_count": 0,
+                    "files": []
+                }
+            ]
+        
+        print(f"📋 Agents endpoint called - returning {len(agents)} agents")
+        return agents
+        
+    except Exception as e:
+        print(f"❌ Error in agents endpoint: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error retrieving agents: {str(e)}")
+
+@app.post("/agents")
+async def create_agent(request: Request):
+    """Create a new agent endpoint - compatible with frontend expectations"""
+    try:
+        data = await request.json()
+        agent_name = data.get("name", "").strip()
+        agent_description = data.get("description", "")
+        
+        if not agent_name:
+            raise HTTPException(status_code=400, detail="Agent name is required")
+        
+        # Create agent directory
+        agent_dir = get_agent_data_directory(agent_name)
+        
+        # Create a simple agent record
+        agent = {
+            "id": hash(agent_name) % 10000,  # Simple ID generation
+            "name": agent_name,
+            "display_name": data.get("display_name", agent_name.replace("_", " ").title()),
+            "description": agent_description,
+            "rag_architecture": data.get("rag_architecture", "llamaindex-pinecone"),
+            "created_at": "2024-01-01T00:00:00.000Z",
+            "updated_at": "2024-01-01T00:00:00.000Z",
+            "is_active": True,
+            "file_count": 0,
+            "files": []
+        }
+        
+        print(f"✅ Created agent: {agent_name} with directory: {agent_dir}")
+        return agent
+        
+    except Exception as e:
+        print(f"❌ Error creating agent: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error creating agent: {str(e)}")
 
 @app.get("/health")
 async def health():
