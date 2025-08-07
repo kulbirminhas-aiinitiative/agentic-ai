@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import Navigation from "../../components/Navigation";
+import ModernNavigation from "../../components/ModernNavigation";
 
 interface Agent {
   id: number;
@@ -67,11 +67,13 @@ export default function AgentChat() {
         
         const agentData = await agentResponse.json();
         console.log('Chat: Agent data received', {
-          agentCount: agentData.agents?.length || 0,
-          agents: agentData.agents?.map((a: Agent) => ({ id: a.id, name: a.name }))
+          agentCount: Array.isArray(agentData) ? agentData.length : 0,
+          agents: Array.isArray(agentData) ? agentData.map((a: Agent) => ({ id: a.id, name: a.name })) : []
         });
         
-        const currentAgent = agentData.agents?.find((a: Agent) => a.id.toString() === agentId);
+        // Handle both formats: direct array or {agents: [...]}
+        const agentsArray = Array.isArray(agentData) ? agentData : agentData.agents || [];
+        const currentAgent = agentsArray.find((a: Agent) => a.id.toString() === agentId);
         console.log('Chat: Current agent found', {
           found: !!currentAgent,
           agent: currentAgent
@@ -81,7 +83,7 @@ export default function AgentChat() {
           setError(`Agent not found with ID: ${agentId}`);
           console.error('Chat: Agent not found', { 
             agentId, 
-            availableAgents: agentData.agents?.map((a: Agent) => a.id) 
+            availableAgents: agentsArray.map((a: Agent) => a.id) 
           });
           return;
         }
@@ -274,7 +276,7 @@ export default function AgentChat() {
   if (agentLoading) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: 'var(--color-surface)' }}>
-        <Navigation />
+        <ModernNavigation />
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 70px)' }}>
           <div style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-text-secondary)' }}>Loading agent...</div>
         </div>
@@ -285,7 +287,7 @@ export default function AgentChat() {
   if (error) {
     return (
       <div style={{ minHeight: "100vh", backgroundColor: 'var(--color-surface)' }}>
-        <Navigation />
+        <ModernNavigation />
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 70px)' }}>
           <div style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-error)' }}>{error}</div>
         </div>
@@ -295,7 +297,7 @@ export default function AgentChat() {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: 'var(--color-surface)', display: "flex", flexDirection: "column" }}>
-      <Navigation />
+      <ModernNavigation />
       
       {/* Agent Header */}
       <div style={{ backgroundColor: 'var(--color-background)', borderBottom: "1px solid var(--color-border)", padding: 'var(--spacing-md) var(--spacing-lg)' }}>

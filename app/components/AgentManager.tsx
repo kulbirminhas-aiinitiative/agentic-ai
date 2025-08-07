@@ -36,14 +36,14 @@ export default function AgentManager({ onSelect }: AgentManagerProps) {
 
   useEffect(() => {
     console.log('AgentManager: Fetching agents...');
-    fetch("/api/agents")
+    fetch("http://localhost:8000/agents")
       .then((res) => {
         console.log('AgentManager: API response status:', res.status);
         return res.json();
       })
       .then((data) => {
         console.log('AgentManager: API response data:', data);
-        setAgents(data.agents || []);
+        setAgents(data || []);
         setLoading(false);
       })
       .catch((error) => {
@@ -55,10 +55,10 @@ export default function AgentManager({ onSelect }: AgentManagerProps) {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return alert("Name is required");
-    const res = await fetch("/api/agents", {
+    const res = await fetch("http://localhost:8000/agents", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, rag_architecture: ragArch }),
+      body: JSON.stringify({ name, display_name: name, description, rag_architecture: ragArch }),
     });
     if (res.ok) {
       alert("Agent created!");
@@ -66,9 +66,9 @@ export default function AgentManager({ onSelect }: AgentManagerProps) {
       setDescription("");
       setRagArch(ragTypes[0].key);
       // Reload agents
-      fetch("/api/agents")
+      fetch("http://localhost:8000/agents")
         .then((res) => res.json())
-        .then((data) => setAgents(data.agents || []));
+        .then((data) => setAgents(data || []));
     } else {
       let data;
       try {
@@ -82,22 +82,16 @@ export default function AgentManager({ onSelect }: AgentManagerProps) {
   // Delete agent handler
   const handleDelete = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this agent?')) return;
-    const res = await fetch('/api/agents', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    });
-    if (res.ok) {
-      setAgents(agents.filter(a => a.id !== id));
-    } else {
-      let data;
-      try {
-        data = await res.json();
-      } catch {
-        data = { error: 'Invalid server response' };
-      }
-      alert(data.error || 'Failed to delete agent');
-    }
+    // TODO: Implement DELETE endpoint in backend API
+    alert('Delete functionality will be implemented in the backend API');
+    // const res = await fetch(`http://localhost:8000/agents/${id}`, {
+    //   method: 'DELETE',
+    // });
+    // if (res.ok) {
+    //   setAgents(agents.filter(a => a.id !== id));
+    // } else {
+    //   alert('Failed to delete agent');
+    // }
   };
 
   return (

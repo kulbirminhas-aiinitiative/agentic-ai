@@ -1,0 +1,36 @@
+# Agentic AI Platform - Core Requirements
+# Essential dependencies for running the application
+
+# FastAPI Backend
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Database
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+
+# HTTP Client
+requests>=2.31.0
+
+# AI/RAG Stack
+llama-index>=0.10.0
+llama-index-core>=0.10.0
+llama-index-llms-openai>=0.1.0
+llama-index-embeddings-openai>=0.1.0
+llama-index-vector-stores-pinecone>=0.1.0
+pinecone-client>=3.0.0
+openai>=1.0.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# File Processing
+pypdf>=3.0.0
+python-docx>=0.8.11
+openpyxl>=3.1.0

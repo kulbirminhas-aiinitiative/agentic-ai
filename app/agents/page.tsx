@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ModernNavigation from '../components/ModernNavigation';
 import './agents-page.css';
 
@@ -13,18 +14,38 @@ const AgentsPage = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     fetchAgents();
   }, []);
 
+  const startChatSession = (agentId: number) => {
+    console.log('Starting chat session for agent:', agentId);
+    router.push(`/chat/${agentId}`);
+  };
+
+  const configureAgent = (agentId: number) => {
+    console.log('Configuring agent:', agentId);
+    router.push(`/agents/${agentId}/settings`);
+  };
+
+  const manageAgentFiles = (agentId: number) => {
+    console.log('Managing files for agent:', agentId);
+    router.push(`/agents/${agentId}/files`);
+  };
+
   const fetchAgents = async () => {
     try {
       const response = await fetch('/api/agents');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setAgents(data.agents || []);
+      setAgents(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching agents:', error);
+      setAgents([]); // Ensure we always set an array
     } finally {
       setLoading(false);
     }
@@ -73,21 +94,21 @@ const AgentsPage = () => {
             <div className="stat-card">
               <div className="stat-icon">◯</div>
               <div className="stat-content">
-                <div className="stat-number">{agents.length}</div>
+                <div className="stat-number">{agents?.length || 0}</div>
                 <div className="stat-label">Total Agents</div>
               </div>
             </div>
             <div className="stat-card">
               <div className="stat-icon">◐</div>
               <div className="stat-content">
-                <div className="stat-number">{agents.filter(a => a.rag_architecture).length}</div>
+                <div className="stat-number">{agents?.filter(a => a.rag_architecture)?.length || 0}</div>
                 <div className="stat-label">Active RAG</div>
               </div>
             </div>
             <div className="stat-card">
               <div className="stat-icon">◑</div>
               <div className="stat-content">
-                <div className="stat-number">3</div>
+                <div className="stat-number">{new Set(agents?.map(a => a.rag_architecture).filter(Boolean)).size || 0}</div>
                 <div className="stat-label">Architectures</div>
               </div>
             </div>
@@ -101,7 +122,7 @@ const AgentsPage = () => {
               <div className="loading-spinner">◯◎◐◑◒◓</div>
               <p>Loading your agents...</p>
             </div>
-          ) : agents.length === 0 ? (
+          ) : !agents || agents.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">◯</div>
               <h3>No agents yet</h3>
@@ -137,15 +158,33 @@ const AgentsPage = () => {
                 </div>
 
                 <div className="agent-actions">
-                  <button className="action-btn primary">
+                  <button 
+                    className="action-btn primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startChatSession(agent.id);
+                    }}
+                  >
                     <span className="btn-icon">◒</span>
                     Chat
                   </button>
-                  <button className="action-btn">
+                  <button 
+                    className="action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      configureAgent(agent.id);
+                    }}
+                  >
                     <span className="btn-icon">◐</span>
                     Configure
                   </button>
-                  <button className="action-btn">
+                  <button 
+                    className="action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      manageAgentFiles(agent.id);
+                    }}
+                  >
                     <span className="btn-icon">◓</span>
                     Files
                   </button>
@@ -182,21 +221,24 @@ const AgentsPage = () => {
                 <div className="detail-grid">
                   <div className="detail-item">
                     <label>Agent ID</label>
-                    <value>#{selectedAgent.id}</value>
+                    <span>#{selectedAgent.id}</span>
                   </div>
                   <div className="detail-item">
                     <label>Architecture</label>
-                    <value>{selectedAgent.rag_architecture}</value>
+                    <span>{selectedAgent.rag_architecture}</span>
                   </div>
                   <div className="detail-item">
                     <label>Status</label>
-                    <value className="status-active">Active</value>
+                    <span className="status-active">Active</span>
                   </div>
                 </div>
               </div>
 
               <div className="detail-actions">
-                <button className="detail-btn primary">
+                <button 
+                  className="detail-btn primary"
+                  onClick={() => startChatSession(selectedAgent.id)}
+                >
                   <span className="btn-icon">◒</span>
                   Start Chat Session
                 </button>

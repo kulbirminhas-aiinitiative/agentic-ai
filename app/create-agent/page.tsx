@@ -18,11 +18,11 @@ const CreateAgentPage = () => {
   const [formData, setFormData] = useState<AgentForm>({
     name: '',
     description: '',
-    ragArchitecture: 'baseline',
-    modelProvider: 'openai',
+    ragArchitecture: 'llamaindex-pinecone',
+    systemPrompt: '',
+    modelProvider: 'gpt-4o',
     temperature: 0.7,
-    maxTokens: 1000,
-    systemPrompt: ''
+    maxTokens: 512
   });
 
   const [isCreating, setIsCreating] = useState(false);
@@ -36,35 +36,67 @@ const CreateAgentPage = () => {
 
   const ragArchitectures = [
     {
-      id: 'baseline',
-      name: 'Baseline RAG',
-      icon: '◯',
-      description: 'Simple vector search with embeddings',
-      features: ['Vector similarity search', 'Basic retrieval', 'Fast setup'],
-      recommended: false
-    },
-    {
-      id: 'rerank',
-      name: 'Rerank RAG',
-      icon: '◎',
-      description: 'Enhanced with re-ranking for better relevance',
-      features: ['Vector search', 'Result re-ranking', 'Improved accuracy'],
-      recommended: true
-    },
-    {
       id: 'llamaindex-pinecone',
       name: 'LlamaIndex + Pinecone',
       icon: '◐',
       description: 'Advanced with LlamaIndex and Pinecone vector DB',
       features: ['Scalable vector DB', 'Advanced indexing', 'Production ready'],
+      recommended: true
+    },
+    {
+      id: 'self-rag',
+      name: 'Self-RAG',
+      icon: '🧠',
+      description: 'Self-evaluating RAG with iterative improvement',
+      features: ['Self-evaluation', 'Iterative refinement', 'Quality scoring'],
       recommended: false
     },
     {
-      id: 'enhanced',
-      name: 'Enhanced RAG',
-      icon: '◑',
-      description: 'Multiple retrieval strategies with fallbacks',
-      features: ['Hybrid search', 'Multiple strategies', 'Auto-fallback'],
+      id: 'agentic-rag',
+      name: 'Agentic RAG',
+      icon: '🤖',
+      description: 'Planning-based RAG with tool integration',
+      features: ['Multi-step planning', 'Tool integration', 'External data access'],
+      recommended: false
+    },
+    {
+      id: 'graph-rag',
+      name: 'Graph RAG',
+      icon: '🕸️',
+      description: 'Knowledge graph-enhanced retrieval',
+      features: ['Entity extraction', 'Relationship modeling', 'Graph traversal'],
+      recommended: false
+    },
+    {
+      id: 'hyde-rag',
+      name: 'HyDE RAG',
+      icon: '📝',
+      description: 'Hypothetical Document Embedding RAG',
+      features: ['Hypothetical generation', 'Ensemble retrieval', 'Semantic enhancement'],
+      recommended: false
+    },
+    {
+      id: 'corrective-rag',
+      name: 'Corrective RAG',
+      icon: '🔍',
+      description: 'Error-detecting RAG with automated corrections',
+      features: ['Error detection', 'Source validation', 'Iterative correction'],
+      recommended: false
+    },
+    {
+      id: 'retrieve-rerank',
+      name: 'Retrieve & Rerank',
+      icon: '◎',
+      description: 'Enhanced with re-ranking for better relevance',
+      features: ['Vector search', 'Result re-ranking', 'Improved accuracy'],
+      recommended: false
+    },
+    {
+      id: 'baseline',
+      name: 'Baseline RAG',
+      icon: '◯',
+      description: 'Simple vector search with embeddings',
+      features: ['Vector similarity search', 'Basic retrieval', 'Fast setup'],
       recommended: false
     }
   ];
@@ -88,13 +120,55 @@ const CreateAgentPage = () => {
   const handleSubmit = async () => {
     setIsCreating(true);
     try {
-      // Mock API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Creating agent:', formData);
-      // Redirect to agents page after creation
-      window.location.href = '/agents';
+      // Call the actual backend API
+      const response = await fetch('http://localhost:8000/agents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name.toLowerCase().replace(/\s+/g, '-'),
+          display_name: formData.name,
+          description: formData.description,
+          rag_architecture: formData.ragArchitecture
+        })
+      });
+
+      if (response.ok) {
+        const newAgent = await response.json();
+        console.log('Agent created successfully:', newAgent);
+        
+        // Update agent settings if needed
+        if (formData.systemPrompt || formData.temperature !== 0.7 || formData.maxTokens !== 1000) {
+          const settingsResponse = await fetch(`http://localhost:8000/agents/${newAgent.id}/settings`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: formData.modelProvider === 'openai' ? 'gpt-4o' : 'gpt-4',
+              temperature: formData.temperature,
+              max_tokens: formData.maxTokens,
+              system_prompt: formData.systemPrompt || `You are a helpful AI assistant named ${formData.name}.`
+            })
+          });
+          
+          if (settingsResponse.ok) {
+            console.log('Agent settings updated successfully');
+          }
+        }
+        
+        // Redirect to agents page after creation
+        alert(`Agent "${formData.name}" created successfully!`);
+        window.location.href = '/agents';
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to create agent');
+      }
     } catch (error) {
       console.error('Error creating agent:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Error creating agent: ${errorMessage}`);
     } finally {
       setIsCreating(false);
     }
