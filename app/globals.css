@@ -11,6 +11,7 @@
 @import './agents/agents-page.css';
 @import './dashboard/dashboard.css';
 @import './create-agent/create-agent.css';
+@import './chat/chat.css';
 
 :root {
   /* Typography */

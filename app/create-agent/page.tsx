@@ -15,7 +15,8 @@ interface AgentForm {
 }
 
 const CreateAgentPage = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [activeSection, setActiveSection] = useState<string>('basic');
+  const [completedSections, setCompletedSections] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState<AgentForm>({
     name: '',
     description: '',
@@ -28,11 +29,35 @@ const CreateAgentPage = () => {
 
   const [isCreating, setIsCreating] = useState(false);
 
-  const steps = [
-    { id: 1, title: 'Basic Info', icon: '◯' },
-    { id: 2, title: 'Architecture', icon: '◎' },
-    { id: 3, title: 'Configuration', icon: '◐' },
-    { id: 4, title: 'Review', icon: '◑' }
+  const sections = [
+    { 
+      id: 'basic', 
+      title: 'Basic Info', 
+      icon: '◯',
+      description: 'Name and description',
+      isComplete: () => formData.name.trim() !== '' && formData.description.trim() !== ''
+    },
+    { 
+      id: 'architecture', 
+      title: 'Architecture', 
+      icon: '◐',
+      description: 'RAG configuration',
+      isComplete: () => formData.ragArchitecture !== ''
+    },
+    { 
+      id: 'configuration', 
+      title: 'Configuration', 
+      icon: '◑',
+      description: 'Model settings',
+      isComplete: () => formData.modelProvider !== '' && formData.temperature >= 0 && formData.maxTokens > 0
+    },
+    { 
+      id: 'review', 
+      title: 'Review', 
+      icon: '●',
+      description: 'Final check',
+      isComplete: () => true
+    }
   ];
 
   const ragArchitectures = [
@@ -102,23 +127,53 @@ const CreateAgentPage = () => {
     }
   ];
 
+  // Update completed sections when form data changes
+  React.useEffect(() => {
+    const newCompleted = new Set<string>();
+    sections.forEach(section => {
+      if (section.isComplete()) {
+        newCompleted.add(section.id);
+      }
+    });
+    setCompletedSections(newCompleted);
+  }, [formData]);
+
   const handleInputChange = (field: keyof AgentForm, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => {
-    if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
+  const getProgressIcon = (sectionId: string, index: number) => {
+    const isCompleted = completedSections.has(sectionId);
+    const isActive = activeSection === sectionId;
+    const total = sections.length;
+    const current = index + 1;
+    
+    if (isCompleted) {
+      return '●';
     }
+    
+    // Show fractional completion based on position
+    const fractionIcons = ['◯', '◔', '◑', '◕', '●'];
+    const fractionIndex = Math.floor((current / total) * (fractionIcons.length - 1));
+    
+    if (isActive) {
+      return fractionIcons[fractionIndex] || '◯';
+    }
+    
+    return '◯';
   };
 
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+  const handleSectionClick = (sectionId: string) => {
+    setActiveSection(sectionId);
+  };
+
+  const canSubmit = () => {
+    return sections.slice(0, -1).every(section => section.isComplete()) && formData.name.trim() !== '';
   };
 
   const handleSubmit = async () => {
+    if (!canSubmit()) return;
+    
     setIsCreating(true);
     try {
       // Call the actual backend API
@@ -174,21 +229,12 @@ const CreateAgentPage = () => {
       setIsCreating(false);
     }
   };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case 'basic':
         return (
-          <div className="step-content">
-            <h2 className="step-title">
-              <span className="step-icon">◯</span>
-              Basic Information
-            </h2>
-            <p className="step-description">
-              Let's start with the basics. Give your agent a name and description.
-            </p>
-            
-            <div className="form-grid">
+          <div className="section-content">
+            <div className="form-grid-compact">
               <div className="form-group">
                 <label className="form-label">Agent Name</label>
                 <input
@@ -200,86 +246,95 @@ const CreateAgentPage = () => {
                 />
               </div>
               
-              <div className="form-group full-width">
+              <div className="form-group">
                 <label className="form-label">Description</label>
                 <textarea
-                  className="form-textarea"
+                  className="form-textarea-compact"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Describe what your agent will do..."
-                  rows={4}
+                  rows={3}
                 />
               </div>
             </div>
           </div>
         );
         
-      case 2:
+      case 'architecture':
         return (
-          <div className="step-content">
-            <h2 className="step-title">
-              <span className="step-icon">◎</span>
-              RAG Architecture
-            </h2>
-            <p className="step-description">
-              Choose the retrieval architecture that best fits your needs.
-            </p>
-            
-            <div className="architecture-grid">
-              {ragArchitectures.map((arch) => (
+          <div className="section-content">
+            <div className="architecture-grid-compact">
+              {ragArchitectures.slice(0, 4).map((arch) => (
                 <div
                   key={arch.id}
-                  className={`architecture-card ${formData.ragArchitecture === arch.id ? 'selected' : ''} ${arch.recommended ? 'recommended' : ''}`}
+                  className={`architecture-card-compact ${formData.ragArchitecture === arch.id ? 'selected' : ''} ${arch.recommended ? 'recommended' : ''}`}
                   onClick={() => handleInputChange('ragArchitecture', arch.id)}
                 >
                   {arch.recommended && (
-                    <div className="recommended-badge">Recommended</div>
+                    <div className="recommended-badge-compact">★</div>
                   )}
                   
-                  <div className="arch-header">
-                    <div className="arch-icon">{arch.icon}</div>
-                    <h3 className="arch-name">{arch.name}</h3>
+                  <div className="arch-header-compact">
+                    <div className="arch-icon-compact">{arch.icon}</div>
+                    <h4 className="arch-name-compact">{arch.name}</h4>
                   </div>
                   
-                  <p className="arch-description">{arch.description}</p>
+                  <p className="arch-description-compact">{arch.description}</p>
                   
-                  <ul className="arch-features">
-                    {arch.features.map((feature, index) => (
-                      <li key={index}>
-                        <span className="feature-icon">•</span>
-                        {feature}
-                      </li>
+                  <ul className="arch-features-compact">
+                    {arch.features.slice(0, 2).map((feature, index) => (
+                      <li key={index}>• {feature}</li>
                     ))}
                   </ul>
                 </div>
               ))}
             </div>
+            
+            {ragArchitectures.length > 4 && (
+              <details className="more-architectures">
+                <summary>View More Architectures ({ragArchitectures.length - 4} more)</summary>
+                <div className="architecture-grid-compact">
+                  {ragArchitectures.slice(4).map((arch) => (
+                    <div
+                      key={arch.id}
+                      className={`architecture-card-compact ${formData.ragArchitecture === arch.id ? 'selected' : ''}`}
+                      onClick={() => handleInputChange('ragArchitecture', arch.id)}
+                    >
+                      <div className="arch-header-compact">
+                        <div className="arch-icon-compact">{arch.icon}</div>
+                        <h4 className="arch-name-compact">{arch.name}</h4>
+                      </div>
+                      
+                      <p className="arch-description-compact">{arch.description}</p>
+                      
+                      <ul className="arch-features-compact">
+                        {arch.features.slice(0, 2).map((feature, index) => (
+                          <li key={index}>• {feature}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
           </div>
         );
         
-      case 3:
+      case 'configuration':
         return (
-          <div className="step-content">
-            <h2 className="step-title">
-              <span className="step-icon">◐</span>
-              Configuration
-            </h2>
-            <p className="step-description">
-              Fine-tune your agent's behavior and model settings.
-            </p>
-            
-            <div className="config-sections">
-              <div className="config-section">
-                <h3 className="config-title">Model Settings</h3>
-                <div className="form-grid">
+          <div className="section-content">
+            <div className="config-grid-compact">
+              <div className="config-group">
+                <h4 className="config-title-compact">Model Settings</h4>
+                <div className="form-grid-compact">
                   <div className="form-group">
-                    <label className="form-label">Model Provider</label>
+                    <label className="form-label">Provider</label>
                     <select
                       className="form-select"
                       value={formData.modelProvider}
                       onChange={(e) => handleInputChange('modelProvider', e.target.value)}
                     >
-                      <option value="openai">OpenAI GPT-4</option>
+                      <option value="gpt-4o">OpenAI GPT-4</option>
                       <option value="anthropic">Anthropic Claude</option>
                       <option value="local">Local Model</option>
                     </select>
@@ -318,16 +373,15 @@ const CreateAgentPage = () => {
                 </div>
               </div>
               
-              <div className="config-section">
-                <h3 className="config-title">System Prompt</h3>
+              <div className="config-group">
+                <h4 className="config-title-compact">System Prompt</h4>
                 <div className="form-group">
-                  <label className="form-label">Instructions</label>
                   <textarea
-                    className="form-textarea"
+                    className="form-textarea-compact"
                     value={formData.systemPrompt}
                     onChange={(e) => handleInputChange('systemPrompt', e.target.value)}
                     placeholder="Enter system instructions for your agent..."
-                    rows={6}
+                    rows={4}
                   />
                 </div>
               </div>
@@ -335,55 +389,82 @@ const CreateAgentPage = () => {
           </div>
         );
         
-      case 4:
+      case 'review':
         return (
-          <div className="step-content">
-            <h2 className="step-title">
-              <span className="step-icon">◑</span>
-              Review & Create
-            </h2>
-            <p className="step-description">
-              Review your agent configuration before creating.
-            </p>
+          <div className="section-content">
+            <div className="review-grid">
+              <div className="review-section-compact">
+                <h4 className="review-title-compact">
+                  <span className="review-icon">◯</span>
+                  Basic Information
+                </h4>
+                <div className="review-items">
+                  <div className="review-item">
+                    <span className="review-label">Name:</span>
+                    <span className="review-value">{formData.name || 'Unnamed Agent'}</span>
+                  </div>
+                  <div className="review-item">
+                    <span className="review-label">Description:</span>
+                    <span className="review-value">{formData.description || 'No description'}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="review-section-compact">
+                <h4 className="review-title-compact">
+                  <span className="review-icon">◐</span>
+                  Architecture
+                </h4>
+                <div className="review-items">
+                  <div className="review-item">
+                    <span className="review-label">RAG Type:</span>
+                    <span className="review-value">
+                      {ragArchitectures.find(arch => arch.id === formData.ragArchitecture)?.name}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="review-section-compact">
+                <h4 className="review-title-compact">
+                  <span className="review-icon">◑</span>
+                  Configuration
+                </h4>
+                <div className="review-items">
+                  <div className="review-item">
+                    <span className="review-label">Model:</span>
+                    <span className="review-value">{formData.modelProvider}</span>
+                  </div>
+                  <div className="review-item">
+                    <span className="review-label">Temperature:</span>
+                    <span className="review-value">{formData.temperature}</span>
+                  </div>
+                  <div className="review-item">
+                    <span className="review-label">Max Tokens:</span>
+                    <span className="review-value">{formData.maxTokens}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            <div className="review-sections">
-              <div className="review-section">
-                <h3 className="review-title">Basic Information</h3>
-                <div className="review-item">
-                  <span className="review-label">Name:</span>
-                  <span className="review-value">{formData.name || 'Unnamed Agent'}</span>
-                </div>
-                <div className="review-item">
-                  <span className="review-label">Description:</span>
-                  <span className="review-value">{formData.description || 'No description'}</span>
-                </div>
-              </div>
-              
-              <div className="review-section">
-                <h3 className="review-title">Architecture</h3>
-                <div className="review-item">
-                  <span className="review-label">RAG Type:</span>
-                  <span className="review-value">
-                    {ragArchitectures.find(arch => arch.id === formData.ragArchitecture)?.name}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="review-section">
-                <h3 className="review-title">Configuration</h3>
-                <div className="review-item">
-                  <span className="review-label">Model:</span>
-                  <span className="review-value">{formData.modelProvider}</span>
-                </div>
-                <div className="review-item">
-                  <span className="review-label">Temperature:</span>
-                  <span className="review-value">{formData.temperature}</span>
-                </div>
-                <div className="review-item">
-                  <span className="review-label">Max Tokens:</span>
-                  <span className="review-value">{formData.maxTokens}</span>
-                </div>
-              </div>
+            <div className="create-button-container">
+              <button
+                className="create-btn-final"
+                onClick={handleSubmit}
+                disabled={!canSubmit() || isCreating}
+              >
+                {isCreating ? (
+                  <>
+                    <span className="loading-spinner">⌛</span>
+                    Creating Agent...
+                  </>
+                ) : (
+                  <>
+                    <span className="create-icon">✨</span>
+                    Create Agent
+                  </>
+                )}
+              </button>
             </div>
           </div>
         );
@@ -394,86 +475,74 @@ const CreateAgentPage = () => {
   };
 
   return (
-    <div className="create-agent-container">
+    <div className="create-agent-container-improved">
       <ModernNavigation />
       
-      <main className="create-agent-main">
+      <main className="create-agent-main-improved">
         {/* Header */}
-        <div className="create-header">
-          <h1 className="page-title">
-            <span className="title-icon">◑</span>
+        <div className="create-header-improved">
+          <h1 className="page-title-improved">
+            <span className="title-icon-improved">🤖</span>
             Create New Agent
           </h1>
-          <p className="page-subtitle">
+          <p className="page-subtitle-improved">
             Build an intelligent AI agent tailored to your needs
           </p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="progress-container">
-          <div className="progress-steps">
-            {steps.map((step) => (
-              <div
-                key={step.id}
-                className={`progress-step ${currentStep >= step.id ? 'active' : ''} ${currentStep === step.id ? 'current' : ''}`}
-              >
-                <div className="step-number">{step.icon}</div>
-                <div className="step-title">{step.title}</div>
+        {/* Main Content Layout */}
+        <div className="create-layout">
+          {/* Left Sidebar - Progress Navigation */}
+          <div className="progress-sidebar">
+            <div className="progress-header">
+              <h3>Setup Progress</h3>
+              <div className="overall-progress">
+                <div className="progress-circle">
+                  <span className="progress-text">
+                    {completedSections.size}/{sections.length}
+                  </span>
+                </div>
               </div>
-            ))}
+            </div>
+            
+            <nav className="progress-nav">
+              {sections.map((section, index) => (
+                <button
+                  key={section.id}
+                  className={`progress-nav-item ${activeSection === section.id ? 'active' : ''} ${completedSections.has(section.id) ? 'completed' : ''}`}
+                  onClick={() => handleSectionClick(section.id)}
+                >
+                  <div className="nav-icon">
+                    {getProgressIcon(section.id, index)}
+                  </div>
+                  <div className="nav-content">
+                    <div className="nav-title">{section.title}</div>
+                    <div className="nav-description">{section.description}</div>
+                  </div>
+                  {completedSections.has(section.id) && (
+                    <div className="nav-check">✓</div>
+                  )}
+                </button>
+              ))}
+            </nav>
           </div>
-          <div className="progress-bar">
-            <div 
-              className="progress-fill"
-              style={{ width: `${(currentStep / steps.length) * 100}%` }}
-            />
+
+          {/* Right Content Area */}
+          <div className="content-area">
+            <div className="section-header">
+              <h2 className="section-title">
+                <span className="section-icon">
+                  {sections.find(s => s.id === activeSection)?.icon}
+                </span>
+                {sections.find(s => s.id === activeSection)?.title}
+              </h2>
+              <div className="section-progress">
+                Step {sections.findIndex(s => s.id === activeSection) + 1} of {sections.length}
+              </div>
+            </div>
+            
+            {renderSectionContent()}
           </div>
-        </div>
-
-        {/* Step Content */}
-        <div className="step-container">
-          {renderStepContent()}
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="nav-buttons">
-          <button
-            className="nav-btn secondary"
-            onClick={handlePrevious}
-            disabled={currentStep === 1}
-          >
-            <span className="btn-icon">◐</span>
-            Previous
-          </button>
-          
-          {currentStep < 4 ? (
-            <button
-              className="nav-btn primary"
-              onClick={handleNext}
-              disabled={currentStep === 1 && !formData.name}
-            >
-              Next
-              <span className="btn-icon">◑</span>
-            </button>
-          ) : (
-            <button
-              className="nav-btn primary create-btn"
-              onClick={handleSubmit}
-              disabled={isCreating}
-            >
-              {isCreating ? (
-                <>
-                  <span className="loading-spinner">◯◎◐◑</span>
-                  Creating...
-                </>
-              ) : (
-                <>
-                  Create Agent
-                  <span className="btn-icon">✨</span>
-                </>
-              )}
-            </button>
-          )}
         </div>
       </main>
       

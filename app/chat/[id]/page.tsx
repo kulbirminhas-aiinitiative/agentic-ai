@@ -1,14 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
 import ModernNavigation from "../../components/ModernNavigation";
 import Footer from "../../components/Footer";
+import Link from "next/link";
+import '../chat.css';
+
+interface Message {
+  role: string;
+  content: string;
+  timestamp?: Date;
+}
 
 interface Agent {
-  id: number;
-  name: string;
+  id: string;
   display_name?: string;
-  description?: string;
+  name: string;
+  description: string;
   rag_architecture?: string;
 }
 
@@ -25,7 +34,7 @@ interface AgentSettings {
 
 const defaultSettings: AgentSettings = {
   temperature: 0.7,
-  model: "gpt-4",
+  model: "gpt-4o",
   top_p: 1,
   top_k: 40,
   max_tokens: 2048,
@@ -34,94 +43,84 @@ const defaultSettings: AgentSettings = {
   stop_sequences: "",
 };
 
-export default function AgentChat() {
+export default function ChatV2AgentPage() {
   const params = useParams();
+  const router = useRouter();
   const agentId = params.id as string;
   
-  const [agent, setAgent] = useState<Agent | null>(null);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [settings, setSettings] = useState<AgentSettings>(defaultSettings);
-  const [messages, setMessages] = useState<{ user: string, text: string }[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [agentLoading, setAgentLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingAgents, setLoadingAgents] = useState(true);
   const [error, setError] = useState("");
+  const [sidebarSection, setSidebarSection] = useState<'agents' | 'info' | 'history' | 'settings'>('agents');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [agentSearchTerm, setAgentSearchTerm] = useState("");
+  const [showAgentDropdown, setShowAgentDropdown] = useState(false);
+  const [agentChatHistory, setAgentChatHistory] = useState<{[key: string]: Message[]}>({});
+  const [expandedInfoCard, setExpandedInfoCard] = useState<string | null>(null);
+  const [selectedAgentForDetails, setSelectedAgentForDetails] = useState<Agent | null>(null);
+  const [selectedSectionCard, setSelectedSectionCard] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load agent and settings
   useEffect(() => {
-    const loadAgentData = async () => {
-      if (!agentId) {
-        console.error('Chat: No agentId provided');
+    fetchAgents();
+    loadChatHistory();
+    loadAllAgentChatHistory();
+  }, []);
+
+  useEffect(() => {
+    if (agentId && agents.length > 0) {
+      loadAgentData();
+    }
+  }, [agentId, agents]);
+
+  useEffect(() => {
+    // Auto-scroll to bottom when messages change
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  async function fetchAgents() {
+    setLoadingAgents(true);
+    try {
+      const res = await fetch("/api/agents");
+      if (res.ok) {
+        const data = await res.json();
+        const agentsArray = Array.isArray(data) ? data : data.agents || [];
+        setAgents(agentsArray);
+      }
+    } catch (error) {
+      console.error("Failed to fetch agents:", error);
+      setError("Failed to load agents");
+    } finally {
+      setLoadingAgents(false);
+    }
+  }
+
+  async function loadAgentData() {
+    if (!agentId) return;
+    
+    try {
+      // Find the current agent
+      const currentAgent = agents.find(a => a.id.toString() === agentId);
+      if (!currentAgent) {
+        setError(`Agent not found with ID: ${agentId}`);
         return;
       }
       
-      console.log('Chat: Loading agent data for ID:', agentId);
-      setAgentLoading(true);
+      setSelectedAgent(currentAgent);
       
-      try {
-        // Fetch agent details
-        console.log('Chat: Fetching agents from /api/agents');
-        const agentResponse = await fetch(`/api/agents`);
-        console.log('Chat: Agent API response', {
-          status: agentResponse.status,
-          ok: agentResponse.ok
-        });
-        
-        const agentData = await agentResponse.json();
-        console.log('Chat: Agent data received', {
-          agentCount: Array.isArray(agentData) ? agentData.length : 0,
-          agents: Array.isArray(agentData) ? agentData.map((a: Agent) => ({ id: a.id, name: a.name })) : []
-        });
-        
-        // Handle both formats: direct array or {agents: [...]}
-        const agentsArray = Array.isArray(agentData) ? agentData : agentData.agents || [];
-        const currentAgent = agentsArray.find((a: Agent) => a.id.toString() === agentId);
-        console.log('Chat: Current agent found', {
-          found: !!currentAgent,
-          agent: currentAgent
-        });
-        
-        if (!currentAgent) {
-          setError(`Agent not found with ID: ${agentId}`);
-          console.error('Chat: Agent not found', { 
-            agentId, 
-            availableAgents: agentsArray.map((a: Agent) => a.id) 
-          });
-          return;
-        }
-        
-        setAgent(currentAgent);
-        console.log('Chat: Agent set successfully', currentAgent);
-        
-        // Fetch agent settings
-        console.log('Chat: Fetching agent settings for ID:', agentId);
-        const settingsResponse = await fetch(`/api/agent-settings?id=${agentId}`);
-        console.log('Chat: Settings API response', {
-          status: settingsResponse.status,
-          ok: settingsResponse.ok
-        });
-        
+      // Load agent settings
+      const settingsResponse = await fetch(`/api/agent-settings?id=${agentId}`);
+      if (settingsResponse.ok) {
         const settingsData = await settingsResponse.json();
-        console.log('Chat: Settings data received', {
-          hasSettings: !!settingsData.settings,
-          settingsCount: settingsData.settings?.length || 0,
-          settings: settingsData.settings
-        });
-        
         if (settingsData.settings) {
           const agentSettings = { ...defaultSettings };
-          console.log('Chat: Processing agent settings', {
-            defaultSettings,
-            receivedSettings: settingsData.settings
-          });
-          
           settingsData.settings.forEach((setting: { setting_key: string; setting_value: string }) => {
             const key = setting.setting_key as keyof AgentSettings;
-            console.log('Chat: Processing setting', {
-              key,
-              value: setting.setting_value,
-              existsInDefault: key in agentSettings
-            });
-            
             if (key in agentSettings) {
               if (typeof agentSettings[key] === 'number') {
                 (agentSettings as any)[key] = Number(setting.setting_value);
@@ -130,57 +129,140 @@ export default function AgentChat() {
               }
             }
           });
-          
-          console.log('Chat: Final processed settings', agentSettings);
           setSettings(agentSettings);
-        } else {
-          console.log('Chat: No settings found, using defaults', defaultSettings);
         }
-      } catch (err) {
-        console.error('Chat: Error loading agent data', {
-          error: err,
-          errorMessage: err instanceof Error ? err.message : String(err),
-          errorStack: err instanceof Error ? err.stack : undefined,
-          agentId
-        });
-        setError(`Failed to load agent data: ${err instanceof Error ? err.message : String(err)}`);
-      } finally {
-        setAgentLoading(false);
-        console.log('Chat: Agent loading completed');
       }
-    };
-    
-    loadAgentData();
-  }, [agentId]);
+    } catch (err) {
+      console.error("Error loading agent data:", err);
+      setError(`Failed to load agent data: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading || !agent) {
-      console.log('Chat: Blocked send attempt', { 
-        inputEmpty: !input.trim(), 
-        isLoading, 
-        agentMissing: !agent 
-      });
-      return;
+  function loadChatHistory() {
+    // Load chat history from localStorage if available
+    const savedHistory = localStorage.getItem(`chat-history-${agentId}`);
+    if (savedHistory) {
+      try {
+        const history = JSON.parse(savedHistory);
+        setMessages(history.map((msg: any) => ({
+          ...msg,
+          timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+        })));
+      } catch (error) {
+        console.error("Failed to load chat history:", error);
+      }
+    }
+  }
+
+  function loadAllAgentChatHistory() {
+    // Load chat history for all agents from localStorage
+    const allHistory: {[key: string]: Message[]} = {};
+    
+    // Get all localStorage keys that match our chat history pattern
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('chat-history-')) {
+        const agentIdFromKey = key.replace('chat-history-', '');
+        try {
+          const history = JSON.parse(localStorage.getItem(key) || '[]');
+          if (history.length > 0) {
+            allHistory[agentIdFromKey] = history.map((msg: any) => ({
+              ...msg,
+              timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+            }));
+          }
+        } catch (error) {
+          console.error(`Failed to load chat history for agent ${agentIdFromKey}:`, error);
+        }
+      }
+    }
+    
+    setAgentChatHistory(allHistory);
+  }
+
+  function startNewChat() {
+    setMessages([]);
+    saveChatHistory([]);
+  }
+
+  // Filter agents based on search term
+  const filteredAgents = agents.filter(agent => 
+    (agent.display_name || agent.name).toLowerCase().includes(agentSearchTerm.toLowerCase()) ||
+    agent.id.toString().includes(agentSearchTerm)
+  );
+
+  function handleAgentSelect(agent: Agent) {
+    // Navigate to the specific agent chat page
+    window.location.href = `/chat/${agent.id}`;
+  }
+
+  function handleAgentCardClick(agent: Agent, event: React.MouseEvent) {
+    // Stop propagation to prevent dropdown from closing
+    event.stopPropagation();
+    // Set the selected agent for detailed view
+    setSelectedAgentForDetails(agent);
+    setShowAgentDropdown(false);
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Element;
+      if (!target.closest('.agent-dropdown-container')) {
+        setShowAgentDropdown(false);
+      }
     }
 
-    const userMessage = { user: "You", text: input };
-    console.log('Chat: Sending message', { 
-      agentId, 
-      agentName: agent.name, 
-      message: input,
-      currentSettings: settings 
-    });
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  function saveChatHistory(newMessages: Message[]) {
+    try {
+      localStorage.setItem(`chat-history-${agentId}`, JSON.stringify(newMessages));
+      // Update the agent chat history state
+      setAgentChatHistory(prev => ({
+        ...prev,
+        [agentId]: newMessages
+      }));
+    } catch (error) {
+      console.error("Failed to save chat history:", error);
+    }
+  }
+
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || !selectedAgent || loading) return;
     
-    setMessages(prev => [...prev, userMessage]);
+    // Prevent focus from moving to send button
+    const activeElement = document.activeElement as HTMLElement;
+    
+    const userMessage: Message = { 
+      role: "user", 
+      content: input,
+      timestamp: new Date()
+    };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput("");
-    setIsLoading(true);
+    setLoading(true);
+
+    // Restore focus to the textarea after state updates
+    setTimeout(() => {
+      const textarea = document.querySelector('.chat-input') as HTMLTextAreaElement;
+      if (textarea && activeElement === textarea) {
+        textarea.focus();
+      }
+    }, 0);
 
     try {
       const payload = {
-        messages: [
-          ...messages.map(m => ({ role: m.user === "You" ? "user" : "assistant", content: m.text })),
-          { role: "user", content: input }
-        ],
+        messages: newMessages.map(m => ({ 
+          role: m.role, 
+          content: m.content 
+        })),
         // Use agent-specific settings
         temperature: settings.temperature,
         model: settings.model,
@@ -189,243 +271,672 @@ export default function AgentChat() {
         max_tokens: settings.max_tokens,
         frequency_penalty: settings.frequency_penalty,
         presence_penalty: settings.presence_penalty,
-        stop: settings.stop_sequences ? settings.stop_sequences.split(',').map(s => s.trim()) : undefined,
+        stop_sequences: settings.stop_sequences,
         agent_id: agentId,
-        agent_name: agent.name
+        agent_name: selectedAgent.name
       };
 
-      console.log('Chat: Sending payload to /api/chat', {
-        payloadSize: JSON.stringify(payload).length,
-        agentId: payload.agent_id,
-        messageCount: payload.messages.length,
-        lastMessage: payload.messages[payload.messages.length - 1],
-        settings: {
-          model: payload.model,
-          temperature: payload.temperature,
-          max_tokens: payload.max_tokens
-        }
-      });
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      console.log('Chat: API response received', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
-      const data = await response.json();
-      console.log('Chat: API response data', {
-        hasResponse: !!data.response,
-        hasError: !!data.error,
-        responseLength: data.response?.length,
-        errorMessage: data.error,
-        fullData: data
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
       
-      if (data.response) {
-        const botMessage = { user: agent.display_name || agent.name, text: data.response };
-        setMessages(prev => [...prev, botMessage]);
-        console.log('Chat: Bot message added successfully', {
-          botName: botMessage.user,
-          responseLength: botMessage.text.length
-        });
-      } else {
-        console.error('Chat: No response in API data', data);
-        throw new Error(data.error || 'No response received from API');
-      }
-    } catch (err) {
-      console.error('Chat: Error occurred', {
-        error: err,
-        errorMessage: err instanceof Error ? err.message : String(err),
-        errorStack: err instanceof Error ? err.stack : undefined,
-        agentId,
-        input
-      });
+      if (!res.ok) throw new Error("Chat API error");
+      const data = await res.json();
       
-      // Create detailed error message for user
-      let userErrorMessage = `Sorry, I encountered an error: ${err instanceof Error ? err.message : String(err)}`;
+      const assistantMessage: Message = { 
+        role: "assistant", 
+        content: data.response || "(no response)",
+        timestamp: new Date()
+      };
       
-      // Add debugging info for development
-      if (process.env.NODE_ENV === 'development') {
-        userErrorMessage += `\n\nDebug Info:\n- Agent ID: ${agentId}\n- Agent: ${agent?.name}\n- Settings: ${JSON.stringify(settings, null, 2)}`;
-        if (err instanceof Error && err.stack) {
-          userErrorMessage += `\n- Stack: ${err.stack}`;
-        }
-      }
-      
-      const errorMessage = { user: "System", text: userErrorMessage };
-      setMessages(prev => [...prev, errorMessage]);
+      const finalMessages = [...newMessages, assistantMessage];
+      setMessages(finalMessages);
+      saveChatHistory(finalMessages);
+    } catch (err: any) {
+      const errorMessage: Message = { 
+        role: "assistant", 
+        content: "[Error: Could not get response from backend]",
+        timestamp: new Date()
+      };
+      const finalMessages = [...newMessages, errorMessage];
+      setMessages(finalMessages);
+      saveChatHistory(finalMessages);
     } finally {
-      setIsLoading(false);
-      console.log('Chat: Send operation completed');
+      setLoading(false);
     }
-  };
+  }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  function selectAgent(agent: Agent) {
+    router.push(`/chat/${agent.id}`);
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setInput(e.target.value);
+    
+    // Auto-resize textarea
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+  }
+
+  function handleKeyPress(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSend(e);
     }
-  };
-
-  if (agentLoading) {
-    return (
-      <div style={{ minHeight: "100vh", backgroundColor: 'var(--color-surface)' }}>
-        <ModernNavigation />
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 70px)' }}>
-          <div style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-text-secondary)' }}>Loading agent...</div>
-        </div>
-      </div>
-    );
   }
 
   if (error) {
     return (
-      <div style={{ minHeight: "100vh", backgroundColor: 'var(--color-surface)' }}>
+      <div className="chat-container">
         <ModernNavigation />
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 70px)' }}>
-          <div style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-error)' }}>{error}</div>
+        <div style={{ padding: "var(--spacing-xl)", textAlign: "center" }}>
+          <h1 style={{ color: "var(--color-error)", marginBottom: "var(--spacing-md)" }}>
+            Error
+          </h1>
+          <p style={{ color: "var(--color-text-secondary)", marginBottom: "var(--spacing-lg)" }}>
+            {error}
+          </p>
+          <Link href="/chat" style={{ 
+            color: "var(--color-primary)", 
+            textDecoration: "none",
+            fontWeight: 600
+          }}>
+            ← Back to Chat
+          </Link>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: 'var(--color-surface)', display: "flex", flexDirection: "column" }}>
+    <div className="chat-container">
       <ModernNavigation />
       
-      {/* Agent Header */}
-      <div style={{ backgroundColor: 'var(--color-background)', borderBottom: "1px solid var(--color-border)", padding: 'var(--spacing-md) var(--spacing-lg)' }}>
-        <div className="container" style={{ maxWidth: "800px" }}>
-          <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', margin: 0 }}>
-            Chat with {agent?.display_name || agent?.name}
-          </h1>
-          {agent?.description && (
-            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', margin: "var(--spacing-xs) 0 0 0" }}>
-              {agent.description}
-            </p>
-          )}
-          <div style={{ 
-            fontSize: 'var(--font-size-xs)', 
-            color: 'var(--color-text-muted)', 
-            marginTop: 'var(--spacing-xs)',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 'var(--spacing-sm)'
-          }}>
-            <span>Model: {settings.model}</span>
-            <span>•</span>
-            <span>Temperature: {settings.temperature}</span>
-            <span>•</span>
-            <span>Max Tokens: {settings.max_tokens}</span>
-            {agent?.rag_architecture && (
-              <>
-                <span>•</span>
-                <span>RAG: {agent.rag_architecture}</span>
-              </>
+      <div className="chat-layout">
+        {/* Sidebar */}
+        <aside className={`chat-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          {/* Toggle Button */}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="sidebar-toggle-btn"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? '⮞' : '⮜'}
+          </button>
+
+          {/* Header */}
+          <div className="chat-sidebar-header">
+            <div className="chat-header-content">
+              <h1 className="chat-title">
+                {selectedAgent ? (selectedAgent.display_name || selectedAgent.name) : 'Loading...'}
+              </h1>
+            </div>
+          </div>
+            
+          {/* Vertical Navigation */}
+          <div className="sidebar-nav">
+            {[
+              { key: 'agents', label: 'Agents', icon: '◎' },
+              { key: 'info', label: 'Info', icon: '◐' },
+              { key: 'history', label: 'History', icon: '◒' },
+              { key: 'settings', label: 'Settings', icon: '◓' }
+            ].map(item => (
+              <button
+                key={item.key}
+                onClick={() => {
+                  if (selectedSectionCard === item.key) {
+                    setSelectedSectionCard(null);
+                    setSidebarSection(item.key as any);
+                  } else {
+                    setSelectedSectionCard(item.key);
+                    setSidebarSection(item.key as any);
+                  }
+                }}
+                className={`sidebar-nav-item ${sidebarSection === item.key ? 'active' : ''}`}
+              >
+                <span className="sidebar-nav-icon">{item.icon}</span>
+                <span className="sidebar-nav-label">{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Sidebar Content - Removed per user request */}
+          <div className="sidebar-content">
+            {/* Content sections removed - only expandable full-screen views remain */}
+          </div>
+        </aside>
+
+        {/* Main Chat Area */}
+        <main className={`chat-main ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+          {selectedSectionCard ? (
+            /* Section Detail View - Full Screen Card */
+            <div className="section-detail-view">
+              <div className="section-detail-header-main">
+                <button 
+                  className="back-btn-main"
+                  onClick={() => setSelectedSectionCard(null)}
+                >
+                  ← Back to Chat
+                </button>
+                <h2 className="section-detail-title-main">
+                  {selectedSectionCard === 'agents' && 'Agent Management'}
+                  {selectedSectionCard === 'info' && 'Agent Information'}
+                  {selectedSectionCard === 'history' && 'Chat History'}
+                  {selectedSectionCard === 'settings' && 'Agent Settings'}
+                </h2>
+              </div>
+
+              <div className="section-detail-content-main">
+                {selectedSectionCard === 'agents' && (
+                  <div className="agent-management-view">
+                    <div className="current-agent-section">
+                      <h3>Current Agent</h3>
+                      {selectedAgent && (
+                        <div className="agent-card-main">
+                          <div className="agent-card-header">
+                            <h4>{selectedAgent.display_name || selectedAgent.name}</h4>
+                            <span className="agent-id">#{selectedAgent.id}</span>
+                          </div>
+                          <p className="agent-description">{selectedAgent.description}</p>
+                          <div className="agent-specs">
+                            <div className="spec-item">
+                              <strong>Status:</strong> <span className="status-active">● Active</span>
+                            </div>
+                            {selectedAgent.rag_architecture && (
+                              <div className="spec-item">
+                                <strong>Architecture:</strong> {selectedAgent.rag_architecture}
+                              </div>
+                            )}
+                          </div>
+                          <div className="agent-actions-main">
+                            <button 
+                              className="action-btn primary"
+                              onClick={() => setSelectedSectionCard(null)}
+                            >
+                              <span className="action-icon">💬</span>
+                              Continue Chat Session
+                            </button>
+                            <button 
+                              className="action-btn secondary"
+                              onClick={() => setSelectedSectionCard('info')}
+                            >
+                              <span className="action-icon">ℹ️</span>
+                              View Details
+                            </button>
+                            <button 
+                              className="action-btn secondary"
+                              onClick={() => setSelectedSectionCard('settings')}
+                            >
+                              <span className="action-icon">⚙️</span>
+                              Configure Settings
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="available-agents-section">
+                      <h3>Switch to Another Agent</h3>
+                      <div className="agents-grid">
+                        {agents.filter(agent => agent.id !== selectedAgent?.id).map(agent => (
+                          <div key={agent.id} className="agent-card-grid">
+                            <div className="agent-card-header">
+                              <h4>{agent.display_name || agent.name}</h4>
+                              <span className="agent-id">#{agent.id}</span>
+                            </div>
+                            <p className="agent-description-short">
+                              {agent.description?.length > 100 
+                                ? `${agent.description.substring(0, 100)}...` 
+                                : agent.description}
+                            </p>
+                            <div className="agent-actions-grid">
+                              <button 
+                                className="action-btn primary small"
+                                onClick={() => handleAgentSelect(agent)}
+                              >
+                                Switch to This Agent
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedSectionCard === 'info' && selectedAgent && (
+                  <div className="info-detail-view">
+                    <div className="info-card-large">
+                      <h3>Agent Details</h3>
+                      <div className="info-grid">
+                        <div className="info-section">
+                          <h4>Basic Information</h4>
+                          <div className="info-item">
+                            <strong>Name:</strong> {selectedAgent.display_name || selectedAgent.name}
+                          </div>
+                          <div className="info-item">
+                            <strong>Agent ID:</strong> #{selectedAgent.id}
+                          </div>
+                          <div className="info-item">
+                            <strong>Description:</strong> {selectedAgent.description}
+                          </div>
+                          {selectedAgent.rag_architecture && (
+                            <div className="info-item">
+                              <strong>Architecture:</strong> {selectedAgent.rag_architecture}
+                            </div>
+                          )}
+                          <div className="info-item">
+                            <strong>Status:</strong> <span className="status-active">● Online & Ready</span>
+                          </div>
+                        </div>
+
+                        <div className="info-section">
+                          <h4>Model Configuration</h4>
+                          <div className="info-item">
+                            <strong>Model:</strong> {settings.model}
+                          </div>
+                          <div className="info-item">
+                            <strong>Temperature:</strong> {settings.temperature}
+                          </div>
+                          <div className="info-item">
+                            <strong>Max Tokens:</strong> {settings.max_tokens}
+                          </div>
+                          <div className="info-item">
+                            <strong>Top P:</strong> {settings.top_p}
+                          </div>
+                          <div className="info-item">
+                            <strong>Top K:</strong> {settings.top_k}
+                          </div>
+                        </div>
+
+                        <div className="info-section">
+                          <h4>Session Statistics</h4>
+                          <div className="info-item">
+                            <strong>Messages in Current Session:</strong> {messages.length}
+                          </div>
+                          <div className="info-item">
+                            <strong>Session Status:</strong> {messages.length > 0 ? 'Active' : 'Not started'}
+                          </div>
+                          <div className="info-item">
+                            <strong>Last Activity:</strong> {messages.length > 0 ? 'Just now' : 'None'}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="info-actions">
+                        <button 
+                          className="action-btn primary"
+                          onClick={() => setSelectedSectionCard(null)}
+                        >
+                          <span className="action-icon">💬</span>
+                          Start Chat Session
+                        </button>
+                        <button 
+                          className="action-btn secondary"
+                          onClick={() => setSelectedSectionCard('settings')}
+                        >
+                          <span className="action-icon">⚙️</span>
+                          Configure Settings
+                        </button>
+                        <button 
+                          className="action-btn secondary"
+                          onClick={() => setSelectedSectionCard('history')}
+                        >
+                          <span className="action-icon">📝</span>
+                          View Chat History
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedSectionCard === 'history' && (
+                  <div className="history-detail-view">
+                    <div className="history-overview">
+                      <h3>Chat History - {selectedAgent?.display_name || selectedAgent?.name}</h3>
+                      <div className="history-stats">
+                        <div className="stat-card">
+                          <div className="stat-number">{messages.length}</div>
+                          <div className="stat-label">Messages in Current Session</div>
+                        </div>
+                        <div className="stat-card">
+                          <div className="stat-number">{selectedAgent && agentChatHistory[selectedAgent.id] ? agentChatHistory[selectedAgent.id].length : 0}</div>
+                          <div className="stat-label">Messages in Previous Sessions</div>
+                        </div>
+                        <div className="stat-card">
+                          <div className="stat-number">{(selectedAgent && agentChatHistory[selectedAgent.id] ? agentChatHistory[selectedAgent.id].length : 0) + messages.length}</div>
+                          <div className="stat-label">Total Messages with Agent</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="history-sessions-main">
+                      <h4>Session History for {selectedAgent?.display_name || selectedAgent?.name}</h4>
+                      
+                      {/* Current Session */}
+                      <div className="session-card current">
+                        <div className="session-header">
+                          <h5>Current Session</h5>
+                          <span className="session-status">Active Now</span>
+                        </div>
+                        <div className="session-details">
+                          <p><strong>Messages:</strong> {messages.length}</p>
+                          <p><strong>Status:</strong> {messages.length > 0 ? 'In Progress' : 'Ready to Start'}</p>
+                          {messages.length > 0 && (
+                            <p><strong>Latest:</strong> "{messages[messages.length - 1].content.substring(0, 100)}..."</p>
+                          )}
+                        </div>
+                        <div className="session-actions">
+                          <button 
+                            className="action-btn primary small"
+                            onClick={() => setSelectedSectionCard(null)}
+                          >
+                            Continue Session
+                          </button>
+                          {messages.length > 0 && (
+                            <button 
+                              className="action-btn secondary small"
+                              onClick={() => {
+                                setMessages([]);
+                                saveChatHistory([]);
+                              }}
+                            >
+                              Clear Session
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Previous Sessions for Selected Agent Only */}
+                      {selectedAgent && agentChatHistory[selectedAgent.id] && agentChatHistory[selectedAgent.id].length > 0 ? (
+                        <div className="session-card">
+                          <div className="session-header">
+                            <h5>Previous Session</h5>
+                            <span className="session-date">
+                              {agentChatHistory[selectedAgent.id][agentChatHistory[selectedAgent.id].length - 1]?.timestamp 
+                                ? new Date(agentChatHistory[selectedAgent.id][agentChatHistory[selectedAgent.id].length - 1].timestamp!).toLocaleDateString()
+                                : 'Recent'
+                              }
+                            </span>
+                          </div>
+                          <div className="session-details">
+                            <p><strong>Messages:</strong> {agentChatHistory[selectedAgent.id].length}</p>
+                            <p><strong>Latest:</strong> "{agentChatHistory[selectedAgent.id][agentChatHistory[selectedAgent.id].length - 1]?.content.substring(0, 100)}..."</p>
+                          </div>
+                          <div className="session-actions">
+                            <button 
+                              className="action-btn secondary small"
+                              onClick={() => {
+                                // Load previous session
+                                setMessages(agentChatHistory[selectedAgent.id]);
+                                setSelectedSectionCard(null);
+                              }}
+                            >
+                              Load Previous Session
+                            </button>
+                            <button 
+                              className="action-btn secondary small"
+                              onClick={() => {
+                                // Clear previous session history
+                                const newHistory = { ...agentChatHistory };
+                                delete newHistory[selectedAgent.id];
+                                setAgentChatHistory(newHistory);
+                                localStorage.removeItem(`chat-history-${selectedAgent.id}`);
+                              }}
+                            >
+                              Clear History
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="session-card empty">
+                          <div className="session-header">
+                            <h5>No Previous Sessions</h5>
+                          </div>
+                          <div className="session-details">
+                            <p>No previous chat history found for {selectedAgent?.display_name || selectedAgent?.name}.</p>
+                            <p>Start chatting to create your first session!</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="history-actions">
+                      <button 
+                        className="action-btn primary"
+                        onClick={() => setSelectedSectionCard(null)}
+                      >
+                        <span className="action-icon">💬</span>
+                        Return to Chat
+                      </button>
+                      <button 
+                        className="action-btn secondary"
+                        disabled
+                      >
+                        <span className="action-icon">💾</span>
+                        Export All History
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {selectedSectionCard === 'settings' && selectedAgent && (
+                  <div className="settings-detail-view">
+                    <div className="settings-card-large">
+                      <h3>Agent Configuration</h3>
+                      <div className="settings-grid">
+                        <div className="settings-section">
+                          <h4>Model Parameters</h4>
+                          <div className="settings-group">
+                            <div className="setting-display">
+                              <label>Model</label>
+                              <div className="setting-value">{settings.model}</div>
+                            </div>
+                            <div className="setting-display">
+                              <label>Temperature</label>
+                              <div className="setting-value">{settings.temperature}</div>
+                            </div>
+                            <div className="setting-display">
+                              <label>Max Tokens</label>
+                              <div className="setting-value">{settings.max_tokens}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="settings-section">
+                          <h4>Advanced Parameters</h4>
+                          <div className="settings-group">
+                            <div className="setting-display">
+                              <label>Top P</label>
+                              <div className="setting-value">{settings.top_p}</div>
+                            </div>
+                            <div className="setting-display">
+                              <label>Top K</label>
+                              <div className="setting-value">{settings.top_k}</div>
+                            </div>
+                            <div className="setting-display">
+                              <label>Frequency Penalty</label>
+                              <div className="setting-value">{settings.frequency_penalty}</div>
+                            </div>
+                            <div className="setting-display">
+                              <label>Presence Penalty</label>
+                              <div className="setting-value">{settings.presence_penalty}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="settings-section">
+                          <h4>Agent Information</h4>
+                          <div className="settings-group">
+                            <div className="setting-display">
+                              <label>Agent Name</label>
+                              <div className="setting-value">{selectedAgent.display_name || selectedAgent.name}</div>
+                            </div>
+                            <div className="setting-display">
+                              <label>Agent ID</label>
+                              <div className="setting-value">#{selectedAgent.id}</div>
+                            </div>
+                            {selectedAgent.rag_architecture && (
+                              <div className="setting-display">
+                                <label>Architecture</label>
+                                <div className="setting-value">{selectedAgent.rag_architecture}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="settings-actions">
+                        <button 
+                          className="action-btn primary"
+                          onClick={() => setSelectedSectionCard(null)}
+                        >
+                          <span className="action-icon">💬</span>
+                          Return to Chat
+                        </button>
+                        <button 
+                          className="action-btn secondary"
+                          onClick={() => setSelectedSectionCard('info')}
+                        >
+                          <span className="action-icon">ℹ️</span>
+                          View Agent Info
+                        </button>
+                        <button 
+                          className="action-btn secondary"
+                          disabled
+                        >
+                          <span className="action-icon">📁</span>
+                          Manage Files
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Messages Area */}
+              <div className="chat-messages">
+            {!selectedAgent ? (
+              <div className="welcome-panel">
+                <div className="welcome-icon">🤖</div>
+                <p className="welcome-title">
+                  Loading Agent...
+                </p>
+                <p className="welcome-text">
+                  Please wait while we load the agent information.
+                </p>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="start-conversation-panel">
+                <div className="start-conversation-icon">💬</div>
+                <p className="start-conversation-title">
+                  Start a conversation
+                </p>
+                <p className="start-conversation-text">
+                  Type a message below to begin chatting with <strong>{selectedAgent.display_name || selectedAgent.name}</strong>
+                  <br />
+                  Using {settings.model} with temperature {settings.temperature}
+                </p>
+              </div>
+            ) : (
+              messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`message-row ${msg.role}`}
+                >
+                  {msg.role === "assistant" && (
+                    <div className="message-avatar bot">
+                      🤖
+                    </div>
+                  )}
+                  <div className={`message-bubble ${msg.role}`}>
+                    {msg.content}
+                    <div className={`message-time ${msg.role}`}>
+                      {msg.timestamp ? msg.timestamp.toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      }) : new Date().toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </div>
+                  </div>
+                  {msg.role === "user" && (
+                    <div className="message-avatar user">
+                      👤
+                    </div>
+                  )}
+                </div>
+              ))
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Chat Area */}
-      <div className="container" style={{ flex: 1, display: "flex", flexDirection: "column", maxWidth: "800px", padding: `0 var(--spacing-lg)` }}>
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: "auto", padding: `var(--spacing-lg) 0`, display: "flex", flexDirection: "column", gap: 'var(--spacing-md)' }}>
-          {messages.length === 0 && (
-            <div style={{ textAlign: "center", color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-base)', padding: 'var(--spacing-xl)' }}>
-              Start a conversation with {agent?.display_name || agent?.name}!
-            </div>
-          )}
-          
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                justifyContent: message.user === "You" ? "flex-end" : "flex-start",
-                marginBottom: 'var(--spacing-xs)'
-              }}
-            >
-              <div
-                style={{
-                  maxWidth: "70%",
-                  padding: 'var(--spacing-sm) var(--spacing-md)',
-                  borderRadius: 'var(--radius-lg)',
-                  background: message.user === "You" ? 'var(--color-primary)' : 'var(--color-background)',
-                  color: message.user === "You" ? '#fff' : 'var(--color-text-primary)',
-                  boxShadow: 'var(--shadow-sm)',
-                  border: message.user !== "You" ? '1px solid var(--color-border)' : "none"
-                }}
-              >
-                <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-xs)', opacity: 0.8 }}>
-                  {message.user}
+            {loading && (
+              <div className="message-row">
+                <div className="message-avatar bot">
+                  🤖
                 </div>
-                <div style={{ fontSize: 'var(--font-size-sm)', lineHeight: 1.5 }}>
-                  {message.text}
+                <div className="message-bubble bot">
+                  <div className="loading-pulse" style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    backgroundColor: "var(--color-primary)",
+                    display: "inline-block",
+                    marginRight: "var(--spacing-sm)"
+                  }}></div>
+                  Thinking...
                 </div>
               </div>
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 'var(--spacing-xs)' }}>
-              <div
-                style={{
-                  padding: 'var(--spacing-sm) var(--spacing-md)',
-                  borderRadius: 'var(--radius-lg)',
-                  background: 'var(--color-background)',
-                  color: 'var(--color-text-secondary)',
-                  boxShadow: 'var(--shadow-sm)',
-                  border: '1px solid var(--color-border)'
-                }}
-              >
-                <div style={{ fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-xs)' }}>
-                  {agent?.display_name || agent?.name}
+            )}
+            
+            {/* Scroll anchor */}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Area */}
+          {selectedAgent && (
+            <div className="chat-input-area">
+              <form onSubmit={handleSend} className="chat-input-form">
+                <div className="chat-input-wrapper">
+                  <textarea
+                    value={input}
+                    onChange={handleInputChange}
+                    onKeyPress={handleKeyPress}
+                    placeholder={`Message ${selectedAgent.display_name || selectedAgent.name}...`}
+                    disabled={loading}
+                    className="chat-input"
+                    rows={1}
+                    style={{
+                      resize: "none",
+                      minHeight: "20px",
+                      maxHeight: "100px",
+                      overflow: "hidden"
+                    }}
+                  />
                 </div>
-                <div style={{ fontSize: 'var(--font-size-sm)' }}>Thinking...</div>
+                                <button
+                  type="submit"
+                  disabled={loading || !input.trim()}
+                  className="send-btn"
+                  tabIndex={-1}
+                >
+                  {loading ? "..." : "Send"} 
+                  {!loading && <span>🚀</span>}
+                </button>
+              </form>
+              <div className="chat-input-hint">
+                Press Enter to send • Shift+Enter for new line • {selectedAgent.display_name || selectedAgent.name} using {settings.model}
               </div>
             </div>
           )}
-        </div>
-
-        {/* Input Area */}
-        <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-          <div style={{ display: "flex", gap: 'var(--spacing-sm)', alignItems: "flex-end" }}>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={`Message ${agent?.display_name || agent?.name}...`}
-              className="form-input"
-              style={{
-                flex: 1,
-                border: "none",
-                resize: "none",
-                minHeight: '20px',
-                maxHeight: '100px',
-                padding: 0,
-                background: "transparent",
-                outline: 'none'
-              }}
-              rows={1}
-            />
-            <button
-              onClick={handleSend}
-              disabled={isLoading || !input.trim()}
-              className={`btn btn-primary ${(isLoading || !input.trim()) ? 'btn-disabled' : ''}`}
-              style={{ fontSize: 'var(--font-size-sm)' }}
-            >
-              Send
-            </button>
-          </div>
-        </div>
+            </>
+          )}
+        </main>
       </div>
       
       <Footer />

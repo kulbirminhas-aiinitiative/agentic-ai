@@ -1,90 +1,93 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
-export default function ChatPage() {
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import ModernNavigation from "../components/ModernNavigation";
+import Footer from "../components/Footer";
+
+interface Agent {
+  id: string;
+  display_name?: string;
+  name: string;
+  description: string;
+  rag_architecture?: string;
+}
+
+export default function ChatV2Page() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    const redirectToFirstAgent = async () => {
+    // Redirect to default agent or first available agent
+    const redirectToDefaultAgent = async () => {
       try {
-        // Fetch agents from the backend
-        const response = await fetch('http://localhost:8000/agents');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch agents');
-        }
-        
-        const agents = await response.json();
-        
-        if (agents && agents.length > 0) {
-          // Redirect to the first agent's chat
-          const firstAgentId = agents[0].id;
-          router.push(`/chat/${firstAgentId}`);
+        const res = await fetch("/api/agents");
+        if (res.ok) {
+          const data = await res.json();
+          const agentsArray = Array.isArray(data) ? data : data.agents || [];
+          
+          if (agentsArray.length > 0) {
+            // Use the first available agent as default
+            const defaultAgentId = agentsArray[0].id;
+            router.replace(`/chat/${defaultAgentId}`);
+          } else {
+            // No agents available, redirect to create agent page
+            router.replace("/create-agent");
+          }
         } else {
-          // No agents available, redirect to create agent page
-          router.push('/create-agent');
+          // API error, try with default ID "1"
+          router.replace("/chat/1");
         }
-      } catch (err) {
-        console.error('Error fetching agents:', err);
-        setError('Unable to load agents. Redirecting to agents page...');
-        // Fallback to agents page after a delay
-        setTimeout(() => {
-          router.push('/agents');
-        }, 2000);
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch agents:", error);
+        // Fallback to default agent ID "1"
+        router.replace("/chat/1");
       }
     };
 
-    redirectToFirstAgent();
+    redirectToDefaultAgent();
   }, [router]);
 
-  if (error) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
-        <div style={{ color: '#d32f2f' }}>{error}</div>
-        <div style={{ fontSize: '0.9rem', color: '#666' }}>
-          Please check if the backend is running on port 8000
-        </div>
-      </div>
-    );
-  }
-
+  // Show loading while redirecting
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '50vh',
-      flexDirection: 'column',
-      gap: '1rem'
-    }}>
-      <div>
-        {loading ? 'Loading agents...' : 'Redirecting to chat...'}
-      </div>
-      <div style={{ fontSize: '0.9rem', color: '#666' }}>
-        Finding the first available agent for you
-      </div>
-      {loading && (
+    <div className="chat-container">
+      <ModernNavigation />
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        minHeight: "50vh",
+        flexDirection: "column",
+        gap: "1rem"
+      }}>
         <div style={{ 
-          width: '20px', 
-          height: '20px', 
-          border: '2px solid #f3f3f3',
-          borderTop: '2px solid #3498db',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
-      )}
+          fontSize: "2rem", 
+          marginBottom: "1rem" 
+        }}>
+          🤖
+        </div>
+        <h2 style={{ 
+          color: "var(--color-text-primary)", 
+          marginBottom: "0.5rem" 
+        }}>
+          Loading Chat...
+        </h2>
+        <p style={{ 
+          color: "var(--color-text-secondary)",
+          fontSize: "0.875rem"
+        }}>
+          Redirecting to your chat session
+        </p>
+        <div style={{
+          width: "24px",
+          height: "24px",
+          border: "3px solid #f3f3f3",
+          borderTop: "3px solid var(--color-primary)",
+          borderRadius: "50%",
+          animation: "spin 1s linear infinite"
+        }} />
+      </div>
+      <Footer />
+      
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }
