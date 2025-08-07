@@ -1,0 +1,66 @@
+# Agentic AI Platform - Complete Requirements
+# All dependencies needed for the full-stack application
+
+# ===== CORE FASTAPI BACKEND DEPENDENCIES (REQUIRED) =====
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+
+# ===== ENVIRONMENT AND CONFIGURATION =====
+python-dotenv>=1.0.0
+
+# ===== DATABASE DEPENDENCIES =====
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+
+# ===== HTTP CLIENT AND UTILITIES =====
+requests>=2.31.0
+
+# ===== RAG AND AI DEPENDENCIES =====
+# LlamaIndex core components
+llama-index>=0.10.0
+llama-index-core>=0.10.0
+
+# LlamaIndex integrations
+llama-index-llms-openai>=0.1.0
+llama-index-embeddings-openai>=0.1.0
+llama-index-vector-stores-pinecone>=0.1.0
+
+# Vector database
+pinecone-client>=3.0.0
+
+# OpenAI API client
+openai>=1.0.0
+
+# ===== DATA PROCESSING =====
+numpy>=1.24.0
+pandas>=2.0.0
+
+# ===== FILE PROCESSING =====
+# For document loading and text processing
+pypdf>=3.0.0
+python-docx>=0.8.11
+openpyxl>=3.1.0
+
+# ===== DEVELOPMENT AND TESTING =====
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+
+# ===== OPTIONAL: ADDITIONAL RAG ENHANCEMENTS =====
+# Uncomment these for advanced RAG features
+# sentence-transformers>=2.2.0
+# chromadb>=0.4.0
+# faiss-cpu>=1.7.0
+# transformers>=4.30.0
+
+# ===== SYSTEM DEPENDENCIES =====
+# These are typically installed via system package manager
+# but listing for completeness
+# On macOS: brew install postgresql
+# On Ubuntu: apt-get install postgresql-client
+
+# ===== VERSION NOTES =====
+# Python 3.9+ required
+# PostgreSQL 12+ recommended
+# Node.js 18+ required for frontend (Next.js)
